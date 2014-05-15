@@ -1,6 +1,5 @@
 
 asciiList = File.open('ascii')
-asciiLineFile =File.open('asciiin.txt')
 outfile = File.open("asciiout.txt", 'w')
 
 =begin
@@ -39,7 +38,6 @@ asciiList.each_line do |line|
 
 	outfile.write(thisOut)
 	charOffset += length
-
 end
 
 asciiList.close
