@@ -2,14 +2,17 @@
 asciiList = File.open('ascii')
 outfile = File.open("asciiout.txt", 'w')
 
+lengthArray = []
 charOffset = 0
+
+outfile.write("byte all[] PROGMEM = {\n")
 
 asciiList.each_line do |line|
 	data =line.gsub(/\s+/m, ' ').strip.split(" ")
 	asciiIdx=data[0]
 	character=data[1]
 	length=(data[2].to_i) * 2
-	thisOut = "\nbyte " + asciiIdx + "_base[] PROGMEM = { //" + character + "\n"
+	thisOut = "//" + character + "\n"
 
 	asciiLineFile =File.open('asciiin.txt')
 	asciiLineFile.each_line do |arrayLine|
@@ -20,10 +23,13 @@ asciiList.each_line do |line|
 	end
 	asciiLineFile.close
 
-	thisOut += "}\n"
+	thisOut += "\n"
 
 	outfile.write(thisOut)
+	lengthArray.push(length/2)
 	charOffset += length
 end
 
 asciiList.close
+outfile.write("} \nint lengths[] = {" + lengthArray.join(",") + "}")
+outfile.close
