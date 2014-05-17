@@ -962,12 +962,12 @@ void setup() {
 }
 
 void loop() {
-  scrollImage("hello", 2);
+  scrollImage("hello");
 }
 
-void scrollImage(char[] strIn, int del){
+void scrollImage(char* strIn){
   int maxWidth = 0;
-  for (int i = 0; i < strIn.length; i++){
+  for (int i = 0; i < strlen(strIn); i++){
     char thisChar = strIn[i];
     maxWidth += lengths[thisChar-33];
   }
@@ -975,16 +975,16 @@ void scrollImage(char[] strIn, int del){
 
   for(int i=0; i<maxWidth; i++){
     //go through every character 
-    for(int charIndex = 0; charIndex < strIn.length; charIndex++){
+    for(int charIndex = 0; charIndex < strlen(strIn); charIndex++){
       char c = strIn[charIndex];
-      int charWidth = lengths[thisChar-33];
+      int charWidth = lengths[c-33];
 
       //iterate through that character, column by column
       for(int charX = 0; charX < charWidth; charX++){
         int screenX = stringX - i;
 
         if (0 <= screenX && screenX < LEDsW){
-          for(int screenY = 0; y < LEDsH; y++){
+          for(int screenY = 0; screenY < LEDsH; screenY++){
             int color = getCharPixel(c, charX, screenY);
             setLED(screenX, screenY, color);
           }
@@ -994,7 +994,7 @@ void scrollImage(char[] strIn, int del){
       }
     }
     strip.show();
-    delay(del);
+    delay(2);
   }
 }
 
@@ -1002,7 +1002,7 @@ int getCharPixel(char c, int x, int y){
   int charIdx = ((c+1) - 33) * 8; //each character is 8 high
   int charLen = lengths[c - 33];
   String charLine = String(all[charIdx - y], BIN);
-  return charLine.substring(7-charLen+y-1, 7-charLen+y).toInt()
+  return charLine.substring(7-charLen+y-1, 7-charLen+y).toInt();
 }
 
 //sets an LED of x,y 
