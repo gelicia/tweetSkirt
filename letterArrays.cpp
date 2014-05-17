@@ -1,31 +1,7 @@
-#include "letterArrays.h"
+#include "LPD8806.h"
+#include "SPI.h"
 
-int[] letterArrays::createArray(String inputStr){
-	int outArr[];
-
-	//first go through and calculate the length
-	//then initialize the array to that length
-	//then append the images together
-
-	for (int i = 0; i < inputStr.length; i++) { 
-		char thisChar = inputStr.charAt(i) - 33; //first character starts at 33
-    int getOffset = getSum(thisChar)
-    int getLength = lengths(thisChar)
-    
-	}
-}
-
-int getSum(int idx){
-  int sumOut = 0;
-  for (int i = 0; i<=idx; i++){
-    sumOut += lengths(i)
-  }
-
-  return sumOut;
-}
-
-byte all[] PROGMEM = {
-//!
+byte all[] PROGMEM = {//!
 0002, //1,0,
 0002, //1,0,
 0002, //1,0,
@@ -964,6 +940,101 @@ byte all[] PROGMEM = {
 0000, //0,0,0,0,0,0,
 0000, //0,0,0,0,0,0,
 0000, //0,0,0,0,0,0,
-} 
+};
 
-int lengths[] = {2,5,6,6,6,6,3,5,5,5,6,2,6,2,6,6,6,6,6,6,6,6,6,6,6,2,2,5,6,5,6,7,6,6,6,6,6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,4,6,4,6,6,3,6,6,6,6,6,5,6,6,2,6,5,3,6,6,6,6,6,6,6,4,6,6,6,6,6,6,5,2,5,6}
+int lengths[] = {2,5,6,6,6,6,3,5,5,5,6,2,6,2,6,6,6,6,6,6,6,6,6,6,6,2,2,5,6,5,6,7,6,6,6,6,6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,4,6,4,6,6,3,6,6,6,6,6,5,6,6,2,6,5,3,6,6,6,6,6,6,6,4,6,6,6,6,6,6,5,2,5,6};
+
+// Number of RGB LEDs in strand:
+int LEDsW = 31;
+int LEDsH = 8;
+
+// Chose 2 pins for output; can be any valid output pins:
+int dataPin  = 2;
+int clockPin = 3;
+
+LPD8806 strip = LPD8806(LEDsW * LEDsH, dataPin, clockPin);
+
+//start, default off
+void setup() {
+  Serial.begin(9600);
+  strip.begin();
+  strip.show();
+}
+
+void loop() {
+  scrollImage("hello", 2);
+}
+
+void scrollImage(char[] strIn, int del){
+  int maxWidth = 0;
+  for (int i = 0; i < strIn.length; i++){
+    char thisChar = strIn[i];
+    maxWidth += lengths[thisChar-33];
+  }
+  int stringX = 0;
+
+  for(int i=0; i<maxWidth; i++){
+    //go through every character 
+    for(int charIndex = 0; charIndex < strIn.length; charIndex++){
+      char c = strIn[charIndex];
+      int charWidth = lengths[thisChar-33];
+
+      //iterate through that character, column by column
+      for(int charX = 0; charX < charWidth; charX++){
+        int screenX = stringX - i;
+
+        if (0 <= screenX && screenX < LEDsW){
+          for(int screenY = 0; y < LEDsH; y++){
+            int color = getCharPixel(c, charX, screenY);
+            setLED(screenX, screenY, color);
+          }
+        }
+
+        stringX++;
+      }
+    }
+    strip.show();
+    delay(del);
+  }
+}
+
+int getCharPixel(char c, int x, int y){
+  int charIdx = ((c+1) - 33) * 8; //each character is 8 high
+  int charLen = lengths[c - 33];
+  String charLine = String(all[charIdx - y], BIN);
+  return charLine.substring(7-charLen+y-1, 7-charLen+y).toInt()
+}
+
+//sets an LED of x,y 
+//color is 0-385, with 0 being off
+void setLED(uint32_t x, uint32_t y, uint32_t color){
+  int ledAddr = (LEDsH * ((LEDsW-1)-x)) + (((x&1)==0)?((LEDsH-1)-y):(y));
+  strip.setPixelColor(ledAddr, color==0?color:Wheel(color-1));
+}
+
+//Input a value 0 to 384 to get a color value.
+//The colours are a transition r - g -b - back to r
+
+uint32_t Wheel(uint16_t WheelPos)
+{
+  byte r, g, b;
+  switch(WheelPos / 128)
+  {
+    case 0:
+      r = 127 - WheelPos % 128;   //Red down
+      g = WheelPos % 128;      // Green up
+      b = 0;                  //blue off
+      break; 
+    case 1:
+      g = 127 - WheelPos % 128;  //green down
+      b = WheelPos % 128;      //blue up
+      r = 0;                  //red off
+      break; 
+    case 2:
+      b = 127 - WheelPos % 128;  //blue down 
+      r = WheelPos % 128;      //red up
+      g = 0;                  //green off
+      break; 
+  }
+  return(strip.Color(r,g,b));
+}
