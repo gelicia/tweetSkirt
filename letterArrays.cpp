@@ -959,10 +959,12 @@ void setup() {
   Serial.begin(9600);
   strip.begin();
   strip.show();
+ 
 }
 
 void loop() {
-  scrollImage("hello");
+  scrollImage("h");
+   //Serial.println(pgm_read_byte(&all[5]));
 }
 
 void scrollImage(char* strIn){
@@ -978,7 +980,7 @@ void scrollImage(char* strIn){
     for(int charIndex = 0; charIndex < strlen(strIn); charIndex++){
       char c = strIn[charIndex];
       int charWidth = lengths[c-33];
-
+      
       //iterate through that character, column by column
       for(int charX = 0; charX < charWidth; charX++){
         int screenX = stringX - i;
@@ -999,10 +1001,19 @@ void scrollImage(char* strIn){
 }
 
 int getCharPixel(char c, int x, int y){
-  int charIdx = ((c+1) - 33) * 8; //each character is 8 high
+  int charIdx = ((c+1) - 33) * 7; //each character is 8 high
   int charLen = lengths[c - 33];
-  String charLine = String(all[charIdx - y], BIN);
-  return charLine.substring(7-charLen+y-1, 7-charLen+y).toInt();
+  String charLine = String(pgm_read_byte(&all[charIdx - y]), BIN);
+
+  Serial.println(String(x) + " " + String(y) + " " + charLine);
+
+  if (charLine.length() < x+1) {
+    return 0;//outInt = charLine.toInt();
+  }else{
+    return charLine.substring(x, x+1).toInt();
+  }
+  
+ // return outInt;
 }
 
 //sets an LED of x,y 
