@@ -962,96 +962,64 @@ void setup() {
 }
 
 void loop() {
-  scrollImage("hello");
+  scrollImage("hello", 60);
 }
 
-
-void scrollImage(char* strIn){
-  
-  int maxWidth = 0;
-  for (int i = 0; i < strlen(strIn); i++){
-    char thisChar = strIn[i];
-    maxWidth += lengths[thisChar-33];
-  }
-  
- for (int test = 0; test < 5; test++){
-  
-  int colThreshold = lengths[strIn[0]-33];
-  int colOffset = 0;
-  int charOfInterest = 0;
-
-  for (int column = 0; column < LEDsW; column++){
-      if (column == maxWidth){ // column beyond string length, restart string
-        colThreshold = lengths[strIn[0]-33];
-        colOffset = 0;
-        charOfInterest = 0;
-      }
-      else if (column == colThreshold){ //column beyond current char threshhold, increase threshhold
-        colOffset = column;
-        charOfInterest++;
-        colThreshold += lengths[strIn[charOfInterest] - 33];
-      }
-      
-      for (int row=0; row < LEDsH; row++){
-            int pixel = getCharPixel(strIn[charOfInterest], row, column - colOffset);
-            setLED(column+test, row, pixel);
-      }
-  }
-  
- strip.show();
-  delay(1000);
-  
-}
-  
-  /*for (int row = 0; row< LEDsH; row++){
-    for (int column = 0; column < lengths[thisChar-33]; column++){
-      int pixel = getCharPixel(thisChar, row - rowOffset, column);
-      Serial.print(pixel);
+void scrollImage(char* strIn, int del){
+    int maxWidth = 0;
+    for (int i = 0; i < strlen(strIn); i++){
+        char thisChar = strIn[i];
+        maxWidth += lengths[thisChar-33];
     }
-    Serial.print('\n');
-  }*/
-
-
-
-
-  /*int maxWidth = 0;
-  for (int i = 0; i < strlen(strIn); i++){
-    char thisChar = strIn[i];
-    maxWidth += lengths[thisChar-33];
-  }
-  
-  //go through every column in the string
- for (int i=0; i < maxWidth; i++){
-     int lengthOffset = 0;
-      //if the column is within the size of the window
-      if(i>=xStart && (i<(xStart + LEDsW))){
-        char thisChar = strIn[0];
-        int column = 1;
-        for (int row = 0; row< LEDsH; row++){
-          for (int column = 0; column < lengths(thisChar-33); column++){
-            int pixel = getCharPixel(thisChar, row, column);
-            Serial.println("begin");
-            Serial.println(row);
-            Serial.println(column);
-            Serial.println(pixel);
-            Serial.println("end");
-            setLED(column, row, pixel);
+    
+    //start at the 0th character, on the 0th row
+    int charOffset = 0;
+    int charColOffset = 0;
+    
+    for (int column = 0; column < maxWidth; column++){
+        char thisChar = strIn[charOffset];
+        
+        //draw the window that starts at the charOffset/charColOffset
+        //update the display
+        int innerCharOffset = charOffset;
+        int innerCharColOffset = charColOffset;
+        
+        for(int x=0; x<LEDsW; x++){
+          char innerThisChar = strIn[innerCharOffset];
+          for(int y=0; y<LEDsH; y++){
+            int pixel = getCharPixel(innerThisChar, y, innerCharColOffset);
+            setLED(x, y, pixel);
+          }
+          
+          innerCharColOffset++;
+          //if the increase in the offset goes beyond the char's length, go up a char and reset the charColOffset to 0;
+          if (innerCharColOffset > (lengths[innerThisChar - 33] -1)){
+            innerCharOffset++;
+                
+            if (innerCharOffset > (strlen(strIn)-1)){
+              innerCharOffset = 0;
+            }
+                
+            innerCharColOffset = 0;
           }
         }
-        lengthOffset++;
-        if (lengthOffset > lengths[thisChar-33]){
-            lengthOffset = 0;
+        
+        charColOffset++;
+        //if the increase in the offset goes beyond the char's length, go up a char and reset the charColOffset to 0;
+        if (charColOffset > (lengths[thisChar - 33]-1)){
+            charOffset++;
+            
+            if (charOffset > strlen(strIn)){
+                charOffset = 0;
+            }
+            
+            charColOffset = 0;
         }
-      }
-  }
-  
-  xStart++;
-  //reset xStart if it's at the end of the string
-  if (xStart > maxWidth){
-      xStart = 0;
-  }
-  strip.show();
-  delay(2);*/
+        
+        strip.show();
+        delay(del);
+    }
+    
 }
 
 int getCharPixel(char thisChar, int down, int left){
@@ -1099,48 +1067,3 @@ uint32_t Wheel(uint16_t WheelPos)
   }
   return(strip.Color(r,g,b));
 }
-
-  /*
-  int stringX = 0;
-
-  for(int i=0; i<maxWidth; i++){
-    //go through every character 
-    for(int charIndex = 0; charIndex < strlen(strIn); charIndex++){
-      char c = strIn[charIndex];
-      int charWidth = lengths[c-33];
-      
-      //iterate through that character, column by column
-      for(int charX = 0; charX < charWidth; charX++){
-        int screenX = stringX - i;
-
-        if (0 <= screenX && screenX < LEDsW){
-          for(int screenY = 0; screenY < LEDsH; screenY++){
-            int color = getCharPixel(c, charX, screenY);
-            setLED(screenX, screenY, color);
-          }
-        }
-
-        stringX++;
-      }
-    }
-    strip.show();
-    delay(2);
-  }
-}
-
-int getCharPixel(char c, int x, int y){
-  int charIdx = ((c+1) - 33) * 7; //each character is 8 high
-  int charLen = lengths[c - 33];
-  String charLine = String(pgm_read_byte(&all[charIdx - y]), BIN);
-
-  Serial.println(String(x) + " " + String(y) + " " + charLine);
-
-  if (charLine.length() < x+1) {
-    return 0;//outInt = charLine.toInt();
-  }else{
-    return charLine.substring(x, x+1).toInt();
-  }
-  
- // return outInt;
-}
-*/
