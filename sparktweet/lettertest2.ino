@@ -4,7 +4,18 @@
 #define PIXEL_PIN D2
 #define PIXEL_TYPE WS2812B
 
-byte all[] = {//!
+byte all[] = {
+//[space]
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+0000, //0,0,
+
+//!
 0002, //1,0,
 0002, //1,0,
 0002, //1,0,
@@ -945,7 +956,7 @@ byte all[] = {//!
 0000, //0,0,0,0,0,0,
 };
 
-int lengths[] = {2,5,6,6,6,6,3,5,5,5,6,2,6,2,6,6,6,6,6,6,6,6,6,6,6,2,2,5,6,5,6,7,6,6,6,6,6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,4,6,4,6,6,3,6,6,6,6,6,5,6,6,2,6,5,3,6,6,6,6,6,6,6,4,6,6,6,6,6,6,5,2,5,6};
+int lengths[] = {2,2,5,6,6,6,6,3,5,5,5,6,2,6,2,6,6,6,6,6,6,6,6,6,6,6,2,2,5,6,5,6,7,6,6,6,6,6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,4,6,4,6,6,3,6,6,6,6,6,5,6,6,2,6,5,3,6,6,6,6,6,6,6,4,6,6,6,6,6,6,5,2,5,6};
 
 // Number of RGB LEDs in strand:
 int LEDsW = 10;
@@ -962,14 +973,14 @@ void setup() {
 }
 
 void loop() {
-  scrollImage("hello", 60);
+  scrollImage("this is a longer string!", 60);
 }
 
 void scrollImage(char* strIn, int del){
     int maxWidth = 0;
     for (int i = 0; i < strlen(strIn); i++){
         char thisChar = strIn[i];
-        maxWidth += lengths[thisChar-33];
+        maxWidth += lengths[thisChar-32];
     }
     
     //start at the 0th character, on the 0th row
@@ -986,6 +997,7 @@ void scrollImage(char* strIn, int del){
         
         for(int x=0; x<LEDsW; x++){
           char innerThisChar = strIn[innerCharOffset];
+          Serial.println(innerThisChar);
           for(int y=0; y<LEDsH; y++){
             int pixel = getCharPixel(innerThisChar, y, innerCharColOffset);
             setLED(x, y, pixel);
@@ -993,7 +1005,7 @@ void scrollImage(char* strIn, int del){
           
           innerCharColOffset++;
           //if the increase in the offset goes beyond the char's length, go up a char and reset the charColOffset to 0;
-          if (innerCharColOffset > (lengths[innerThisChar - 33] -1)){
+          if (innerCharColOffset > (lengths[innerThisChar - 32] -1)){
             innerCharOffset++;
                 
             if (innerCharOffset > (strlen(strIn)-1)){
@@ -1006,7 +1018,7 @@ void scrollImage(char* strIn, int del){
         
         charColOffset++;
         //if the increase in the offset goes beyond the char's length, go up a char and reset the charColOffset to 0;
-        if (charColOffset > (lengths[thisChar - 33]-1)){
+        if (charColOffset > (lengths[thisChar - 32]-1)){
             charOffset++;
             
             if (charOffset > strlen(strIn)){
@@ -1023,10 +1035,10 @@ void scrollImage(char* strIn, int del){
 }
 
 int getCharPixel(char thisChar, int down, int left){
-    String row = String(all[((thisChar-33)*8)+down], BIN);
+    String row = String(all[((thisChar-32)*8)+down], BIN);
     
     int rowLength = row.length();
-    int length = lengths[thisChar - 33];
+    int length = lengths[thisChar - 32];
     
     if(rowLength < length && (left < (length - rowLength))){
         return 0;
