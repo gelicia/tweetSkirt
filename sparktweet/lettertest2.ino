@@ -965,8 +965,8 @@ int LEDsH = 8;
 //pixel pin is D2
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDsW * LEDsH, PIXEL_PIN, PIXEL_TYPE);
-char* displayString = "hello!";
-char* displayPlaceholder = displayString;
+String displayString = "hello!";
+String displayPlaceholder = displayString;
 
 void setup() {
   Serial.begin(9600);
@@ -976,30 +976,20 @@ void setup() {
 }
 
 int changeString(String arg) {
-    const char* testStuff;
-    arg.toCharArray(testStuff, arg.length());
-    Serial.println(testStuff);
-    displayPlaceholder = testStuff
-
+   displayPlaceholder = arg;
 }
 
 void loop() {
   scrollImage(displayString, 60);
-  Serial.println(displayString);
-  
   if (displayString != displayPlaceholder){
-      Serial.print(displayString);
-      Serial.print("-");
-      Serial.print(displayPlaceholder);
-      Serial.println("");
       displayString = displayPlaceholder;
   }
 }
 
-void scrollImage(char* strIn, int del){
+void scrollImage(String strIn, int del){
     int maxWidth = 0;
-    for (int i = 0; i < strlen(strIn); i++){
-        char thisChar = strIn[i];
+    for (int i = 0; i < strIn.length(); i++){
+        char thisChar = strIn.charAt(i);
         maxWidth += lengths[thisChar-32];
     }
     
@@ -1008,7 +998,7 @@ void scrollImage(char* strIn, int del){
     int charColOffset = 0;
     
     for (int column = 0; column < maxWidth; column++){
-        char thisChar = strIn[charOffset];
+        char thisChar = strIn.charAt(charOffset);
         
         //draw the window that starts at the charOffset/charColOffset
         //update the display 
@@ -1016,7 +1006,7 @@ void scrollImage(char* strIn, int del){
         int innerCharColOffset = charColOffset;
         
         for(int x=0; x<LEDsW; x++){
-          char innerThisChar = strIn[innerCharOffset];
+          char innerThisChar = strIn.charAt(innerCharOffset);
           for(int y=0; y<LEDsH; y++){
             int pixel = getCharPixel(innerThisChar, y, innerCharColOffset);
             setLED(x, y, pixel);
@@ -1027,7 +1017,7 @@ void scrollImage(char* strIn, int del){
           if (innerCharColOffset > (lengths[innerThisChar - 32] -1)){
             innerCharOffset++;
                 
-            if (innerCharOffset > (strlen(strIn)-1)){
+            if (innerCharOffset > (strIn.length()-1)){
               innerCharOffset = 0;
             }
                 
@@ -1040,7 +1030,7 @@ void scrollImage(char* strIn, int del){
         if (charColOffset > (lengths[thisChar - 32]-1)){
             charOffset++;
             
-            if (charOffset > strlen(strIn)){
+            if (charOffset > strIn.length()){
                 charOffset = 0;
             }
             
