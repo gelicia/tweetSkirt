@@ -1,0 +1,28 @@
+{
+  "name": "sparktweet-twitter-bot",
+  "version": "1.0.0",
+  "description": "A bot to find tweets to display",
+  "main": "bot.js",
+  "dependencies": {
+    "restler": "^3.2.2",
+    "twit": "^1.1.19"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gelicia/tweetSkirt"
+  },
+  "keywords": [
+    "spark",
+    "twitter"
+  ],
+  "author": "Kristina Durivage",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gelicia/tweetSkirt/issues"
+  },
+  "homepage": "https://github.com/gelicia/tweetSkirt"
+}
