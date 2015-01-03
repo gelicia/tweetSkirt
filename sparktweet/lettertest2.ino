@@ -967,22 +967,46 @@ int LEDsH = 8;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDsW * LEDsH, PIXEL_PIN, PIXEL_TYPE);
 String displayString = "hello!";
 String displayPlaceholder = displayString;
+boolean okayToSwitch = 0;
 
 void setup() {
   Serial.begin(9600);
-  Spark.function("changeString", changeString);
+  Spark.function("buildString", buildString);
   strip.begin();
   strip.show();
 }
 
-int changeString(String arg) {
-   displayPlaceholder = arg;
+int buildString(String arg) {
+    int adminMsg = arg.substring(0, 1).toInt();
+    String msg = arg.substring(2);
+    
+    if (adminMsg == 1){
+        if (msg == "BEGIN"){
+            displayPlaceholder = " ";
+        }
+        else if (msg == "END"){
+            okayToSwitch = 1;
+        }
+    }
+    else {
+        displayPlaceholder.concat(msg);
+    }
+    
+    Serial.print(adminMsg);
+    Serial.print(" ");
+    Serial.print(msg);
+    Serial.print(" ");
+    Serial.print(displayPlaceholder);
+    Serial.println("");
+    
+   //displayPlaceholder = arg;
 }
 
 void loop() {
   scrollImage(displayString, 60);
-  if (displayString != displayPlaceholder){
+  if (okayToSwitch){
       displayString = displayPlaceholder;
+      okayToSwitch = 0;
   }
 }
 
@@ -1009,7 +1033,11 @@ void scrollImage(String strIn, int del){
           char innerThisChar = strIn.charAt(innerCharOffset);
           for(int y=0; y<LEDsH; y++){
             int pixel = getCharPixel(innerThisChar, y, innerCharColOffset);
-            setLED(x, y, pixel);
+            int color = 0;
+            if (pixel == 1){
+                color = (y*31) + 31;
+            }
+            setLED(x, y, color);
           }
           
           innerCharColOffset++;
