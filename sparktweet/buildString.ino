@@ -965,7 +965,7 @@ int LEDsH = 8;
 //pixel pin is D2
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDsW * LEDsH, PIXEL_PIN, PIXEL_TYPE);
-String displayString = "hello!";
+String displayString = "hello! ";
 String displayPlaceholder = displayString;
 boolean okayToSwitch = 0;
 

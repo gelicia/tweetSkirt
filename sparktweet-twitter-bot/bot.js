@@ -38,6 +38,7 @@ function queueTweets() {
 							message : "@" + result.data.user.screen_name + " - " + (result.data.text).substring(userName.length+2)
 						};
 						tweetQueue.push(queueTweet);
+						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
 					}
 				});
 			}
@@ -87,11 +88,39 @@ function isAlreadyDisplayed(tweetData){
 }
 
 function displayTweet(){
+	console.log("looking to display tweets, length is ", tweetQueue.length);
+
 	if (tweetQueue.length > 0){
 		var tweet = tweetQueue.pop();
-		displayed_db.put(tweet.id, tweet.created_at);
-		console.log("tweet displayed ", tweet);
+		sendMessage(1,"BEGIN").done(function(){
+			//can only send 61 characters at a time to the spark
+
+
+			sendMessage(0, tweet.message).done(function(){
+				sendMessage(1,"END");
+				displayed_db.put(tweet.id, tweet.created_at);
+				console.log("display done, length is ", tweetQueue.length);
+
+			});
+
+		});
+
+		//q.all([sendMessage(1,"BEGIN"), sendMessage(0,"Hello!"), sendMessage(1,"END")])
 	}
+}
+
+function sendMessage(adminFlag, message){
+	var deferred = q.defer();
+
+	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
+		data: { 'access_token': sparkConfig.accessToken,
+		'args': adminFlag + "," + message }
+	}).on('complete', function(data, response) {
+		console.log("msg sent : ", adminFlag, message);
+		deferred.resolve();
+	});
+
+	return deferred.promise;
 }
 
 queueTweets(); 
@@ -99,6 +128,6 @@ queueTweets();
 setInterval(queueTweets, 3 * 1000 * 60);
 
 //display a tweet every minute
-setInterval(displayTweet, 1000 * 15);
+setInterval(displayTweet, 1000 * 60);
 
 //todo add a cleanup function to delete all rows in the db over 2 days old. this can be ran once an hour or something
