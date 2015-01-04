@@ -43,4 +43,4 @@ Any tweets that have been displayed have their IDs stored in a small database. T
 ### Other 
  **tweetskirt.ino** is an old file and I will update it maybe someday (probably not). 
 
-The **ASCII Array Building directory** contains all the files for turning individual letters into strings of 1s and 0s to show if an LED should be lit or not, and also letting us record the length of each character so we know how much 0 padding we need. Thanks to [Scott Lembcke](https://github.com/slembcke) for his help! You shouldn't need to run this again, this is just for reference.
+The **ASCII Array Building directory** contains all the files for turning individual letters into strings of 1s and 0s to show if an LED should be lit or not, and also record the length of each character so we know how much 0 padding we need. Thanks to [Scott Lembcke](https://github.com/slembcke) for his ideas and help with this great way of saving space! You shouldn't need to run this again, this is just for reference.
