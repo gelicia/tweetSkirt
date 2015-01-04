@@ -94,9 +94,22 @@ function displayTweet(){
 		var tweet = tweetQueue.pop();
 		sendMessage(1,"BEGIN").done(function(){
 			//can only send 61 characters at a time to the spark
+			var messagePromises = [];
 
+			var msgsNeeded = Math.ceil(tweet.message.length/61);
+			for (var i = 0; i < msgsNeeded; i++) {
+				var thisMessageText = "";
+				if (i == (msgsNeeded - 1)){
+					thisMessageText = tweet.message.substring(61*i);
+				}
+				else {
+					thisMessageText = tweet.message.substring(61*i, 61 * (i+1));
+				}
 
-			sendMessage(0, tweet.message).done(function(){
+				messagePromises.push(sendMessage(0,thisMessageText));
+			}
+
+			q.all(messagePromises).done(function(){
 				sendMessage(1,"END");
 				displayed_db.put(tweet.id, tweet.created_at);
 				console.log("display done, length is ", tweetQueue.length);
@@ -104,8 +117,6 @@ function displayTweet(){
 			});
 
 		});
-
-		//q.all([sendMessage(1,"BEGIN"), sendMessage(0,"Hello!"), sendMessage(1,"END")])
 	}
 }
 
