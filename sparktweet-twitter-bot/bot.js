@@ -88,7 +88,7 @@ function isAlreadyDisplayed(tweetData){
 }
 
 function displayTweet(){
-	console.log("looking to display tweets, length is ", tweetQueue.length);
+	console.log("looking to display tweets, queue length is ", tweetQueue.length);
 
 	if (tweetQueue.length > 0){
 		var tweet = tweetQueue.pop();
