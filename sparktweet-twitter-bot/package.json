@@ -4,6 +4,8 @@
   "description": "A bot to find tweets to display",
   "main": "bot.js",
   "dependencies": {
+    "level": "^0.18.0",
+    "q": "^1.1.2",
     "restler": "^3.2.2",
     "twit": "^1.1.19"
   },
