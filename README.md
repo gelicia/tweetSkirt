@@ -1,7 +1,8 @@
 ## tweetSkirt
-==========
 
 This is a repository for all work related to making scrolling, dynamically built strings work on an LED array.
+
+**Right now, because this is still in development, the database that stores what tweets have been ran already is deleted every time you run the node program. For this to run long term for realsies, I need to remove that and also delete any tweets over a couple days old, since the program only finds tweets made in the last day-ish.**
 
 ### /sparktweet/
 The sparktweet directory is the code that sets up the function on a spark core. It exposes a REST call that can be passed a string and a couple other functions will display and scroll it on an LED array.
@@ -25,9 +26,15 @@ curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=access
 ```
 
 ### /sparktweet-twitter-bot/
-For the twitter part, the bot gets messages from two sources - mentions to @tweetSkirt and recent uses of the #tweetSkirt. Tweets that have not been displayed before go in the queue, and then a seperate process pulls things from the queue. Currently, it looks for new tweets every 3 minutes, and will rotate the display every minute. 
+This directory contains the node program that will look to twitter for tweets and queue them to display, then display them off the queue.
+
+Run `npm install` in the directory to install all dependencies. Rename sparkConfigTEMP.js and twitterConfigTEMP.js to not have TEMP in the name, and fill in the IDs, keys and tokens from twitter and spark.
+
+The program gets messages from two sources - mentions to @tweetSkirt and recent uses of #tweetSkirt. Tweets that have not been displayed before go in the queue, and then a seperate process pulls things from the queue. Currently, it looks for new tweets every 3 minutes, and will rotate the display every minute. 
 
 For mentions, it grabs the last 50, and finds any that are less than 24 hours old that have not been displayed before. For #tweetSkirt usage, it grabs the last 50 "recent" (have been told this means within the last day) and finds any that have not been displayed before.
+
+Any tweets that have been displayed have their IDs stored in a small database. Tweets don't have their ID stored until after the display was successful. 
 
 ### Other 
  **tweetskirt.ino** is an old file and I will update it maybe someday (probably not). 

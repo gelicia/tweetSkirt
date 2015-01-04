@@ -113,7 +113,6 @@ function displayTweet(){
 				sendMessage(1,"END");
 				displayed_db.put(tweet.id, tweet.created_at);
 				console.log("display done, length is ", tweetQueue.length);
-
 			});
 
 		});
