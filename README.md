@@ -19,3 +19,7 @@ curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=access
 curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=accessToken -d "args=0,Message two "
 
 curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=accessToken -d "args=1,END"
+
+For the twitter part, the bot gets messages from two sources - mentions to @tweetSkirt and recent uses of the #tweetSkirt. Tweets that have not been displayed before go in the queue, and then a seperate process pulls things from the queue. Currently, it looks for new tweets every 3 minutes, and will rotate the display every minute. 
+
+For mentions, it grabs the last 50, and finds any that are less than 24 hours old that have not been displayed before. For #tweetSkirt usage, it grabs the last 50 "recent" (at the mercy of the Twitter search API for what consitutes recent) and finds any that have not been displayed before.
