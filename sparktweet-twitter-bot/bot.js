@@ -14,8 +14,6 @@ var displayed_db = levelup('./displayedTweets');
 
 var tweetQueue = [];
 
-var userName = 'tweetSkirt';
-
 function queueTweets() {
 	console.log("look for tweets...");
 	var now = new Date(); 
@@ -35,7 +33,7 @@ function queueTweets() {
 						var queueTweet = {
 							"id" : result.data.id,
 							created_at: new Date(result.data.created_at),
-							message : "@" + result.data.user.screen_name + " - " + (result.data.text).substring(userName.length+2)
+							message : "@" + result.data.user.screen_name + " - " + (result.data.text).substring(result.data.in_reply_to_screen_name.length+2)
 						};
 						tweetQueue.push(queueTweet);
 						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
@@ -60,6 +58,7 @@ function queueTweets() {
 						message : "@" + result.data.user.screen_name + " - " + result.data.text
 					};
 					tweetQueue.push(queueTweet);
+					console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
 				}
 			});
 		};
@@ -68,6 +67,7 @@ function queueTweets() {
 
 function isAlreadyDisplayed(tweetData){
 	var deferred = q.defer();
+	//TODO this should also not requeue a tweet that is already queued up
 	displayed_db.get(tweetData.id, function (err, value) {
 		if (err) {
 			if (err.notFound){
@@ -89,6 +89,7 @@ function isAlreadyDisplayed(tweetData){
 
 function displayTweet(){
 	console.log("looking to display tweets, queue length is ", tweetQueue.length);
+	//TODO sort tweets to pop oldest
 
 	if (tweetQueue.length > 0){
 		var tweet = tweetQueue.pop();
@@ -126,6 +127,8 @@ function sendMessage(adminFlag, message){
 		data: { 'access_token': sparkConfig.accessToken,
 		'args': adminFlag + "," + message }
 	}).on('complete', function(data, response) {
+
+		//TODO error handling here when the program is running but the spark is offline
 		console.log("msg sent : ", adminFlag, message);
 		deferred.resolve();
 	});
