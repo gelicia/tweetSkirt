@@ -27,13 +27,23 @@ function queueTweets() {
 				//check that the tweet has not yet been displayed
 				//we send all the data to it because the loop will keep running and we want to keep the data attached to the promise
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
-
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
+						var queuedMessage = "@" + result.data.user.screen_name + " - ";
+						
+						//If the message begins with the name of the who it was a reply to, remove that beginning name from the string
+						//TODO make this work
+						if ((result.data.text).indexOf(result.data.in_reply_to_screen_name) == 0){
+							queuedMessage = queuedMessage + (result.data.text).substring(result.data.in_reply_to_screen_name.length+2);
+						}
+						else { //otherwise, just display the text
+							queuedMessage = queuedMessage + result.data.text;
+						}
+
 						var queueTweet = {
 							"id" : result.data.id,
 							created_at: new Date(result.data.created_at),
-							message : "@" + result.data.user.screen_name + " - " + (result.data.text).substring(result.data.in_reply_to_screen_name.length+2)
+							message : queuedMessage
 						};
 						tweetQueue.push(queueTweet);
 						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
@@ -65,22 +75,52 @@ function queueTweets() {
 	});
 }
 
+function isAlreadyQueued(tweetData){
+	var deferred = q.defer();
+
+	if (tweetQueue.length == 0){
+		deferred.resolve(false);
+	}
+	else {
+		var isAlreadyQueued = false;
+		for (var i = 0; i < tweetQueue.length; i++) {
+			if (tweetQueue[i].id == tweetData.id){
+				isAlreadyQueued = true;
+			}
+
+			if (i == (tweetQueue.length - 1)){
+				deferred.resolve(isAlreadyQueued);
+			}
+		}
+	}
+	
+	return deferred.promise;
+}
+
 function isAlreadyDisplayed(tweetData){
 	var deferred = q.defer();
-	//TODO this should also not requeue a tweet that is already queued up
-	displayed_db.get(tweetData.id, function (err, value) {
-		if (err) {
-			if (err.notFound){
-				deferred.resolve({toQueue: true, data:tweetData});
-			}
-			else {
-				//count it as displayed (will not queue up) if there's an error, it should get queued next time around
-				deferred.resolve({toQueue: false, data:tweetData});
-			}
-			
-		}
-		else {
+
+	var isQueuedPromise = isAlreadyQueued(tweetData);
+	isQueuedPromise.done(function(isAlreadyQueuedResult){
+		if (isAlreadyQueuedResult){
 			deferred.resolve({toQueue: false, data:tweetData});
+		} 
+		else{
+			displayed_db.get(tweetData.id, function (err, value) {
+				if (err) {
+					if (err.notFound){ //value not found, queue up
+						deferred.resolve({toQueue: true, data:tweetData});
+					}
+					else {
+						//count it as displayed (will not queue up) if there's an error, it should get queued next time around
+						deferred.resolve({toQueue: false, data:tweetData});
+					}
+					
+				}
+				else { //value found, do not queue it up
+					deferred.resolve({toQueue: false, data:tweetData});
+				}
+			});
 		}
 	});
 
@@ -89,7 +129,10 @@ function isAlreadyDisplayed(tweetData){
 
 function displayTweet(){
 	console.log("looking to display tweets, queue length is ", tweetQueue.length);
-	//TODO sort tweets to pop oldest
+
+	tweetQueue.sort(function(a, b) {
+		return a.created_at < b.created_at;
+	});
 
 	if (tweetQueue.length > 0){
 		var tweet = tweetQueue.pop();
@@ -122,12 +165,10 @@ function displayTweet(){
 
 function sendMessage(adminFlag, message){
 	var deferred = q.defer();
-
 	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
 		data: { 'access_token': sparkConfig.accessToken,
 		'args': adminFlag + "," + message }
 	}).on('complete', function(data, response) {
-
 		//TODO error handling here when the program is running but the spark is offline
 		console.log("msg sent : ", adminFlag, message);
 		deferred.resolve();
