@@ -169,8 +169,12 @@ function sendMessage(adminFlag, message){
 		data: { 'access_token': sparkConfig.accessToken,
 		'args': adminFlag + "," + message }
 	}).on('complete', function(data, response) {
-		//TODO error handling here when the program is running but the spark is offline
-		console.log("msg sent : ", adminFlag, message);
+		if (!data.ok){
+			console.log("Error: " + data.error + " for ", adminFlag, message);
+		}
+		else {
+			console.log("msg sent : ", adminFlag, message);	
+		}
 		deferred.resolve();
 	});
 
@@ -179,9 +183,9 @@ function sendMessage(adminFlag, message){
 
 queueTweets(); 
 //find tweets every three minutes
-setInterval(queueTweets, 3 * 1000 * 60);
+setInterval(queueTweets, 2 * 1000 * 60);
 
 //display a tweet every minute
-setInterval(displayTweet, 1000 * 60);
+setInterval(displayTweet, 1000 * 30);
 
 //todo add a cleanup function to delete all rows in the db over 2 days old. this can be ran once an hour or something
