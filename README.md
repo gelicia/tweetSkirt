@@ -2,8 +2,6 @@
 
 This is a repository for all work related to making scrolling, dynamically built strings work on an LED array. Then it's about making tweets display on that array, because the internet of things is really about hooking everything up to twitter.
 
-**Right now, because this is still in development, the database that stores what tweets have been ran already is deleted every time you run the node program. For this to run long term for realsies, I need to remove that and also delete any tweets over a couple days old, since the program only finds tweets made in the last day-ish.**
-
 ### /sparktweet/
 The sparktweet directory is the code that sets up the function on a spark core. It exposes a REST call that can be passed a string and a couple other functions will display and scroll it on an LED array.
 
