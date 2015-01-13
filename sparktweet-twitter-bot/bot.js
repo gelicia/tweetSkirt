@@ -8,7 +8,7 @@ var q = require('q');
 var T = new Twit(require('./twitterConfig.js'));
 var sparkConfig = require('./sparkConfig.js');
 
-levelup.destroy('./displayedTweets');
+//levelup.destroy('./displayedTweets');
 
 var displayed_db = levelup('./displayedTweets');
 
@@ -16,6 +16,8 @@ var tweetQueue = [];
 
 /* I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?  */
 var showBeginningName = false;
+var displayMentionDays = 1;
+var dbCleanupDays = 3;
 
 function queueTweets() {
 	console.log("look for tweets...");
@@ -26,7 +28,7 @@ function queueTweets() {
 			var dataOfInterest = data[i];
 			//only look for tweets less than 24 hours old
 			var tweetDate = new Date(dataOfInterest.created_at);
-			if(now - tweetDate < (1000*60*60*24)){
+			if(now - tweetDate < (1000*60*60*24 * displayMentionDays)){
 				//check that the tweet has not yet been displayed
 				//we send all the data to it because the loop will keep running and we want to keep the data attached to the promise
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
@@ -192,4 +194,16 @@ setInterval(queueTweets, 2 * 1000 * 60);
 //display a tweet every minute
 setInterval(displayTweet, 1000 * 30);
 
-//todo add a cleanup function to delete all rows in the db over 2 days old. this can be ran once an hour or something
+//Make this a process to go off every so often if this program ends up staying online longterm
+function dbCleanup(){
+	var now = new Date();
+	displayed_db.createReadStream()
+	.on('data', function (data) {
+		var tweetDate = new Date(data.value);
+		if (now - tweetDate > 1000*60*60*24*dbCleanupDays){
+			displayed_db.del(data.key);
+		}
+	});
+}
+
+dbCleanup();
