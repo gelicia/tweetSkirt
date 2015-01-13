@@ -14,6 +14,9 @@ var displayed_db = levelup('./displayedTweets');
 
 var tweetQueue = [];
 
+/* I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?  */
+var showBeginningName = false;
+
 function queueTweets() {
 	console.log("look for tweets...");
 	var now = new Date(); 
@@ -29,22 +32,7 @@ function queueTweets() {
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
-						var queuedMessage = "@" + result.data.user.screen_name + " - ";
-						
-						//If the message begins with the name of the who it was a reply to, remove that beginning name from the string
-						//TODO make this work
-						if ((result.data.text).indexOf(result.data.in_reply_to_screen_name) == 0){
-							queuedMessage = queuedMessage + (result.data.text).substring(result.data.in_reply_to_screen_name.length+2);
-						}
-						else { //otherwise, just display the text
-							queuedMessage = queuedMessage + result.data.text;
-						}
-
-						var queueTweet = {
-							"id" : result.data.id,
-							created_at: new Date(result.data.created_at),
-							message : queuedMessage
-						};
+						var queueTweet = processTweetData(result.data);
 						tweetQueue.push(queueTweet);
 						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
 					}
@@ -62,17 +50,33 @@ function queueTweets() {
 
 			isDisplayedPromise.done(function(result){
 				if(result.toQueue){//tweet not found! queue it up!
-					var queueTweet = {
-						"id" : result.data.id,
-						created_at: new Date(result.data.created_at),
-						message : "@" + result.data.user.screen_name + " - " + result.data.text
-					};
+					var queueTweet = processTweetData(result.data);
 					tweetQueue.push(queueTweet);
 					console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
 				}
 			});
 		};
 	});
+}
+
+function processTweetData(tweetData){
+	var queuedMessage = "@" + tweetData.user.screen_name + " - ";
+	
+	//If the message begins with the name of who it was a reply to, remove that name from the string
+	if (!showBeginningName && (tweetData.text).indexOf(tweetData.in_reply_to_screen_name) == 1){
+		queuedMessage = queuedMessage + (tweetData.text).substring(tweetData.in_reply_to_screen_name.length+2);
+	}
+	else { //otherwise, just display the text
+		queuedMessage = queuedMessage + tweetData.text;
+	}
+
+	var queueTweet = {
+		"id" : tweetData.id,
+		created_at: new Date(tweetData.created_at),
+		message : queuedMessage
+	};
+
+	return queueTweet;
 }
 
 function isAlreadyQueued(tweetData){
