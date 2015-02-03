@@ -47,16 +47,19 @@ function queueTweets() {
 	T.get('search/tweets', { q: '#tweetSkirt', result_type: 'recent', count: 50}, function(error, data){
 		for (var i = 0; i < data.statuses.length; i++) {
 			var dataOfInterest = data.statuses[i];
+			
+			//only queue up not retweets
+			if (dataOfInterest.retweeted_status == undefined){
+				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 
-			var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
-
-			isDisplayedPromise.done(function(result){
-				if(result.toQueue){//tweet not found! queue it up!
-					var queueTweet = processTweetData(result.data);
-					tweetQueue.push(queueTweet);
-					console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
-				}
-			});
+				isDisplayedPromise.done(function(result){
+					if(result.toQueue){//tweet not found! queue it up!
+						var queueTweet = processTweetData(result.data);
+						tweetQueue.push(queueTweet);
+						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
+					}
+				});
+			}
 		};
 	});
 }
@@ -175,7 +178,7 @@ function sendMessage(adminFlag, message){
 		data: { 'access_token': sparkConfig.accessToken,
 		'args': adminFlag + "," + message }
 	}).on('complete', function(data, response) {
-		if (!data.ok){
+		if (data.ok !== undefined && !data.ok){
 			console.log("Error: " + data.error + " for ", adminFlag, message);
 		}
 		else {
