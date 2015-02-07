@@ -164,8 +164,8 @@ function displayTweet(){
 
 			q.all(messagePromises).done(function(){
 				sendMessage(1,"END");
-				displayed_db.put(tweet.id, tweet.created_at);
-				console.log("display done, length is ", tweetQueue.length);
+				//displayed_db.put(tweet.id, tweet.created_at);
+				//console.log("display done, length is ", tweetQueue.length);
 			});
 
 		});
@@ -179,10 +179,14 @@ function sendMessage(adminFlag, message){
 		'args': adminFlag + "," + message }
 	}).on('complete', function(data, response) {
 		if (data.ok !== undefined && !data.ok){
-			console.log("Error: " + data.error + " for ", adminFlag, message);
+			console.log("Error: " + data.error + " for ", adminFlag, message, " Tweet will be requeued.");
 		}
 		else {
 			console.log("msg sent : ", adminFlag, message);	
+			if (adminFlag == 1 && message == "END"){
+				displayed_db.put(tweet.id, tweet.created_at);
+				console.log("display done, length is ", tweetQueue.length);
+			}
 		}
 		deferred.resolve();
 	});
