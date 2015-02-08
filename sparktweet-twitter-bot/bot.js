@@ -145,12 +145,13 @@ function displayTweet(){
 
 	if (tweetQueue.length > 0){
 		var tweet = tweetQueue.pop();
-		sendMessage(1,"BEGIN").done(function(){
+		sendMessage(1,{message: "BEGIN"}).done(function(){
 			//can only send 61 characters at a time to the spark
 			var messagePromises = [];
 
 			var msgsNeeded = Math.ceil(tweet.message.length/61);
 			for (var i = 0; i < msgsNeeded; i++) {
+				var tweetData = {};
 				var thisMessageText = "";
 				if (i == (msgsNeeded - 1)){
 					thisMessageText = tweet.message.substring(61*i);
@@ -159,32 +160,34 @@ function displayTweet(){
 					thisMessageText = tweet.message.substring(61*i, 61 * (i+1));
 				}
 
-				messagePromises.push(sendMessage(0,thisMessageText));
+				tweetData.message = thisMessageText;
+
+				messagePromises.push(sendMessage(0,tweetData));
 			}
 
 			q.all(messagePromises).done(function(){
-				sendMessage(1,"END");
-				//displayed_db.put(tweet.id, tweet.created_at);
-				//console.log("display done, length is ", tweetQueue.length);
+				sendMessage(1,{message:"END", id: tweet.id, created_at: tweet.created_at});
 			});
 
 		});
 	}
 }
 
-function sendMessage(adminFlag, message){
+function sendMessage(adminFlag, messageData){
 	var deferred = q.defer();
 	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
 		data: { 'access_token': sparkConfig.accessToken,
-		'args': adminFlag + "," + message }
+		'args': adminFlag + "," + messageData.message }
 	}).on('complete', function(data, response) {
-		if (data.ok !== undefined && !data.ok){
-			console.log("Error: " + data.error + " for ", adminFlag, message, " Tweet will be requeued.");
+		//sometimes the spark API returns the html for the error page instead of the standard array
+		if ((data.ok !== undefined && !(data.ok)) || (typeof data == "string" && data.substring(0, 6) == "<html>")){
+			console.log("Error: " + data.error + " for ", adminFlag, messageData.message, " Tweet will be requeued.");
 		}
 		else {
-			console.log("msg sent : ", adminFlag, message);	
+			console.log("msg sent : ", adminFlag, messageData.message);	
 			if (adminFlag == 1 && message == "END"){
-				displayed_db.put(tweet.id, tweet.created_at);
+				//only put the id in the displayed db if sending to the spark doesn't fail
+				displayed_db.put(messageData.id, messageData.created_at);
 				console.log("display done, length is ", tweetQueue.length);
 			}
 		}
