@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/gelicia/tweetSkirt/issues"
   },
-  "homepage": "https://github.com/gelicia/tweetSkirt"
+  "homepage": "https://github.com/gelicia/tweetSkirt",
+  "dependencies": {
+    "express": "^4.11.2"
+  }
 }

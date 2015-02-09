@@ -9,10 +9,13 @@ var T = new Twit(require('./twitterConfig.js'));
 var sparkConfig = require('./sparkConfig.js');
 
 //levelup.destroy('./displayedTweets');
+//requeue undisplayed tweets when bot is started
+levelup.destroy('./tweetQueue');
+levelup.destroy('./displayQueue');
 
+var tweetQueue_db = levelup('./tweetQueue');
+var displayQueue_db = levelup('./displayQueue');
 var displayed_db = levelup('./displayedTweets');
-
-var tweetQueue = [];
 
 /* I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?  */
 var showBeginningName = false;
@@ -34,9 +37,9 @@ function queueTweets() {
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
-						var queueTweet = processTweetData(result.data);
-						tweetQueue.push(queueTweet);
-						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
+						var queueTweet = processTweetData(result.data);					
+						tweetQueue_db.put(queueTweet.id, queueTweet);
+						console.log("queueing ", queueTweet.message);
 					}
 				});
 			}
@@ -55,8 +58,9 @@ function queueTweets() {
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
 						var queueTweet = processTweetData(result.data);
-						tweetQueue.push(queueTweet);
-						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
+						console.log("put tweet", queueTweet);
+						tweetQueue_db.put(queueTweet.id, queueTweet);
+						console.log("queueing ", queueTweet.message);
 					}
 				});
 			}
@@ -87,21 +91,20 @@ function processTweetData(tweetData){
 function isAlreadyQueued(tweetData){
 	var deferred = q.defer();
 
-	if (tweetQueue.length == 0){
-		deferred.resolve(false);
-	}
-	else {
-		var isAlreadyQueued = false;
-		for (var i = 0; i < tweetQueue.length; i++) {
-			if (tweetQueue[i].id == tweetData.id){
-				isAlreadyQueued = true;
+	tweetQueue_db.get(tweetData.id, function (err, value) {
+		if (err) {
+			if (err.notFound){ 
+				deferred.resolve(false);
 			}
-
-			if (i == (tweetQueue.length - 1)){
-				deferred.resolve(isAlreadyQueued);
+			else {
+				deferred.resolve(true);
 			}
+			
 		}
-	}
+		else { //value found, do not queue it up
+			deferred.resolve(true);
+		}
+	});
 	
 	return deferred.promise;
 }
@@ -136,28 +139,42 @@ function isAlreadyDisplayed(tweetData){
 	return deferred.promise;
 }
 
-function displayTweet(){
-	console.log("looking to display tweets, queue length is ", tweetQueue.length);
-
-	tweetQueue.sort(function(a, b) {
-		return a.created_at < b.created_at;
+function getLeastRecentTweet(){
+	var deferred = q.defer();
+	var tweetOfInterest = {};
+//should be displayQueue
+	tweetQueue_db.createReadStream()
+	.on('data', function (data) {
+		console.log("getLeastRecent", data.value);
+		if (tweetOfInterest.created_at === undefined || data.value.created_at < tweetOfInterest.created_at){
+			tweetOfInterest = data.value;
+		}
+	})
+	.on('end', function () {
+		deferred.resolve(tweetOfInterest);
 	});
 
-	if (tweetQueue.length > 0){
-		var tweet = tweetQueue.pop();
+	return deferred.promise;
+}
+
+function displayTweet(){
+	console.log("looking to display tweets");
+
+	getLeastRecentTweet().done(function(tweetOfInterest){
 		sendMessage(1,{message: "BEGIN"}).done(function(){
+			console.log("tweetOfInterest", tweetOfInterest[0]);
 			//can only send 61 characters at a time to the spark
 			var messagePromises = [];
 
-			var msgsNeeded = Math.ceil(tweet.message.length/61);
+			var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
 			for (var i = 0; i < msgsNeeded; i++) {
 				var tweetData = {};
 				var thisMessageText = "";
 				if (i == (msgsNeeded - 1)){
-					thisMessageText = tweet.message.substring(61*i);
+					thisMessageText = tweetOfInterest.message.substring(61*i);
 				}
 				else {
-					thisMessageText = tweet.message.substring(61*i, 61 * (i+1));
+					thisMessageText = tweetOfInterest.message.substring(61*i, 61 * (i+1));
 				}
 
 				tweetData.message = thisMessageText;
@@ -166,11 +183,10 @@ function displayTweet(){
 			}
 
 			q.all(messagePromises).done(function(){
-				sendMessage(1,{message:"END", id: tweet.id, created_at: tweet.created_at});
+				sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at});
 			});
-
 		});
-	}
+	});
 }
 
 function sendMessage(adminFlag, messageData){
@@ -188,7 +204,7 @@ function sendMessage(adminFlag, messageData){
 			if (adminFlag == 1 && message == "END"){
 				//only put the id in the displayed db if sending to the spark doesn't fail
 				displayed_db.put(messageData.id, messageData.created_at);
-				console.log("display done, length is ", tweetQueue.length);
+				console.log("display done");
 			}
 		}
 		deferred.resolve();
