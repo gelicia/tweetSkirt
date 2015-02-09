@@ -1,23 +1,23 @@
 var loginCreds = require('./loginConfig');
+var config = require('./config');
  
 function submitForm(){ 
   var username = $('#username').val();
   var password = md5($('#password').val() + loginCreds.salt);
 
-  login().done(function(err, res){
-
+  login(username, password).then(function(err, res){
+    console.log(err, res);
   });
 
 }
 
 function login(username, password){
-  var deferred = q.defer();
+  var deferred = Q.defer();
 
   $.ajax({
-        url: "http://rest-service.guides.spring.io/greeting"
+        url: config.rootURL + "/login?password=" + password
     }).then(function(data) {
-       $('.greeting-id').append(data.id);
-       $('.greeting-content').append(data.content);
+       console.log(data);
     });
 
   return deferred.promise;
