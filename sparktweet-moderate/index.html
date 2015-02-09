@@ -2,18 +2,21 @@
 <html>
   <head>
     <title>Login To Skirt Moderation</title>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/md5/build/md5.min.js"></script>
+    <script type="text/javascript" src="bower_components/require/build/require.min.js"></script>
+    <script type="text/javascript" src="js/login.js"></script>
   </head>
   <body>
     <div id="content">
       <div className="Login">
         <h1>Login</h1>
-        <form className="login">
-          <input type="text" value="gelicia" /> <br/>
+        <form class="login" onsubmit="submitLogin()" >
+          <input type="text" id="username" value="gelicia" /> <br/>
           <input type="password" /> <br/>
           <input type="submit" value="Post" />
         </form>
-      </div
+      </div>
     </div>
-    <script type="javascript" src="js/login.js"></script>
   </body>
 </html>
