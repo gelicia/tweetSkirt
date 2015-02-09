@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/gelicia/tweetSkirt",
   "dependencies": {
-    "express": "^4.11.2"
+    "express": "^4.11.2",
+    "nedb": "^1.1.1"
   }
 }
