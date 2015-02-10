@@ -5,10 +5,16 @@ function submitForm(){
   var username = $('#username').val();
   var password = md5($('#password').val() + loginCreds.salt);
 
-  login(username, password).then(function(err, res){
-    console.log(err, res);
-  });
+  login(username, password).then(function(res, err){
+    if (res.success){
+      $('#error').text("");
+      console.log(res);
+    }
+    else {
+      $('#error').text("Incorrect password");
+    }
 
+  });
 }
 
 function login(username, password){
@@ -17,7 +23,7 @@ function login(username, password){
   $.ajax({
         url: config.rootURL + "/login?password=" + password
     }).then(function(data) {
-       console.log(data);
+       deferred.resolve(data);
     });
 
   return deferred.promise;

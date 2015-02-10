@@ -10,13 +10,12 @@
   </head>
   <body>
     <div id="content">
-      <div className="Login">
-        <h1>Login</h1>
-        <form class="login" onsubmit="submitForm()" >
-          <input type="text" id="username" value="gelicia" /> <br/>
-          <input type="password" id="password"/> <br/>
-          <input type="submit" value="Post" />
-        </form>
+      <h1 id="title">Login</h1>
+      <h5 id="error"></h5>
+      <div class="login">
+        <input type="text" id="username" value="gelicia" /> <br/>
+        <input type="password" id="password" onkeydown="if (event.keyCode == 13) document.getElementById('loginBtn').click()"/> <br/>
+        <input type="button" id="loginBtn" value="Login" onclick="submitForm()"/>
       </div>
     </div>
   </body>
