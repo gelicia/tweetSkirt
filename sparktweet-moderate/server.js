@@ -36,6 +36,7 @@ app.get('/displayQueue', function (req, res) {
 });
 
 //move to display queue
+//TODO delete from other DBs
 app.post('/displayQueue', urlencodedParser, function (req, res) {
 	if (!req.body) { 
 		return res.sendStatus(400); 
@@ -50,13 +51,14 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 });
 
 //move to displayed tweets
+//TODO delete from other dbs
 app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	if (!req.body) { 
 		return res.sendStatus(400); 
 	}
 	else {
 		var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
-		
+
 		//make sure jwt token matches db before saving into displayedTweets
 		console.log(req.body);
 		return res.sendStatus(200);

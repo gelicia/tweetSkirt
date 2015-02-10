@@ -18,7 +18,7 @@ displayQueue_db.remove({});
 //displayedTweets_db.remove({});
 
 
-// I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?  */
+// I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?
  var showBeginningName = false;
  var displayMentionDays = 1;
  var dbCleanupDays = 3;
@@ -134,86 +134,83 @@ function isAlreadyDisplayed(tweetData){
 	return deferred.promise;
 }
 
-// function getLeastRecentTweet(){
-// 	var deferred = q.defer();
-// 	var tweetOfInterest = {};
-// //should be displayQueue
-// 	tweetQueue_db.createReadStream()
-// 	.on('data', function (data) {
-// 		console.log("getLeastRecent", data.value);
-// 		if (tweetOfInterest.created_at === undefined || data.value.created_at < tweetOfInterest.created_at){
-// 			tweetOfInterest = data.value;
-// 		}
-// 	})
-// 	.on('end', function () {
-// 		deferred.resolve(tweetOfInterest);
-// 	});
+ function getLeastRecentTweet(){
+ 	var deferred = q.defer();
 
-// 	return deferred.promise;
-// }
+ 	displayQueue_db.findOne({}).sort({ created_at: -1 }).exec(function (err, doc) {
+  		deferred.resolve(doc);
+	});
 
-// function displayTweet(){
-// 	console.log("looking to display tweets");
+ 	return deferred.promise;
+ }
 
-// 	getLeastRecentTweet().done(function(tweetOfInterest){
-// 		sendMessage(1,{message: "BEGIN"}).done(function(){
-// 			console.log("tweetOfInterest", tweetOfInterest[0]);
-// 			//can only send 61 characters at a time to the spark
-// 			var messagePromises = [];
+ function displayTweet(){
+ 	console.log("looking to display tweets");
 
-// 			var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
-// 			for (var i = 0; i < msgsNeeded; i++) {
-// 				var tweetData = {};
-// 				var thisMessageText = "";
-// 				if (i == (msgsNeeded - 1)){
-// 					thisMessageText = tweetOfInterest.message.substring(61*i);
-// 				}
-// 				else {
-// 					thisMessageText = tweetOfInterest.message.substring(61*i, 61 * (i+1));
-// 				}
+ 	displayQueue_db.count({}, function (err, count) {
+	  if (count > 0){
+		getLeastRecentTweet().done(function(tweetOfInterest){
+			sendMessage(1,{message: "BEGIN"}).done(function(){
+				console.log("tweetOfInterest", tweetOfInterest);
+				//can only send 61 characters at a time to the spark
+				var messagePromises = [];
 
-// 				tweetData.message = thisMessageText;
+				var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
+				for (var i = 0; i < msgsNeeded; i++) {
+					var tweetData = {};
+					var thisMessageText = "";
+					if (i == (msgsNeeded - 1)){
+						thisMessageText = tweetOfInterest.message.substring(61*i);
+					}
+					else {
+						thisMessageText = tweetOfInterest.message.substring(61*i, 61 * (i+1));
+					}
 
-// 				messagePromises.push(sendMessage(0,tweetData));
-// 			}
+					tweetData.message = thisMessageText;
 
-// 			q.all(messagePromises).done(function(){
-// 				sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at});
-// 			});
-// 		});
-// 	});
-// }
+					messagePromises.push(sendMessage(0,tweetData));
+				}
 
-// function sendMessage(adminFlag, messageData){
-// 	var deferred = q.defer();
-// 	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
-// 		data: { 'access_token': sparkConfig.accessToken,
-// 		'args': adminFlag + "," + messageData.message }
-// 	}).on('complete', function(data, response) {
-// 		//sometimes the spark API returns the html for the error page instead of the standard array
-// 		if ((data.ok !== undefined && !(data.ok)) || (typeof data == "string" && data.substring(0, 6) == "<html>")){
-// 			console.log("Error: " + data.error + " for ", adminFlag, messageData.message, " Tweet will be requeued.");
-// 		}
-// 		else {
-// 			console.log("msg sent : ", adminFlag, messageData.message);	
-// 			if (adminFlag == 1 && message == "END"){
-// 				//only put the id in the displayed db if sending to the spark doesn't fail
-// 				displayed_db.put(messageData.id, messageData.created_at);
-// 				console.log("display done");
-// 			}
-// 		}
-// 		deferred.resolve();
-// 	});
+				q.all(messagePromises).done(function(){
+					sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at});
+				});
+			});
+		});
+	  }
+	});
+}
 
-// 	return deferred.promise;
-// }
+function sendMessage(adminFlag, messageData){
+	var deferred = q.defer();
+	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
+		data: { 'access_token': sparkConfig.accessToken,
+		'args': adminFlag + "," + messageData.message }
+	}).on('complete', function(data, response) {
+		//sometimes the spark API returns the html for the error page instead of the standard array
+		if ((data.ok !== undefined && !(data.ok)) || (typeof data == "string" && data.substring(0, 6) == "<html>")){
+			console.log("Error: " + data.error + " for ", adminFlag, messageData.message, " Tweet will be requeued.");
+		}
+		else {
+			console.log("msg sent : ", adminFlag, messageData.message);	
+			if (adminFlag == 1 && message == "END"){
+				//only put the id in the displayed db if sending to the spark doesn't fail
+				tweetQueue_db.insert({id: messageData.id, created_at: messageData.created_at});
+				displayed_db.put(messageData.id, messageData.created_at);
+				console.log("display done");
+			}
+		}
+		deferred.resolve();
+	});
+
+	return deferred.promise;
+}
 
  queueTweets(); 
 // //find tweets every three minutes
-// setInterval(queueTweets, 2 * 1000 * 60);
+ setInterval(queueTweets, 2 * 1000 * 60);
 
 // //display a tweet every minute
-// setInterval(displayTweet, 1000 * 30);
+ setInterval(displayTweet, 1000 * 30);
 
 // //Make this a process to go off every so often if this program ends up staying online longterm
 // function dbCleanup(){
