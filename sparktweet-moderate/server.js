@@ -13,7 +13,6 @@ var allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
-
     next();
 };
 
@@ -35,8 +34,15 @@ app.get('/displayQueue', function (req, res) {
 	});
 });
 
+//show displayedTweets
+app.get('/displayedTweets', function (req, res) {
+	var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
+	displayedTweets_db.find({}, function (err, docs) {
+		res.send(docs);
+	});
+});
+
 //move to display queue
-//TODO delete from other DBs
 app.post('/displayQueue', urlencodedParser, function (req, res) {
 	if (!req.body) { 
 		return res.sendStatus(400); 
@@ -62,7 +68,6 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 });
 
 //move to displayed tweets
-//TODO delete from other dbs
 app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	if (!req.body) { 
 		return res.sendStatus(400); 
@@ -103,6 +108,5 @@ app.get('/login', function (req, res) {
 var server = app.listen(3000, function () {
   var host = server.address().address;
   var port = server.address().port;
-  console.log('Example app listening at http://%s:%s', host, port);
-
+  console.log('TweetSkirt Moderation API listening at http://%s:%s', host, port);
 });

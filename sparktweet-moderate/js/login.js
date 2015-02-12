@@ -16,7 +16,6 @@ function submitForm(){
     else {
       $('#error').text("Incorrect password"); 
     }
-
   });
 }
 
@@ -45,7 +44,6 @@ function populateQueues(){
       tweet.append("div").classed("tweetMessage", true).text(function(d){return d.message;});
 
       tweet.append("div").classed("textBtn", true).text("Display").on('click', function(d, i){
-        console.log("displayClick", d, i);
         moveToDisplay(d).then(function(){
           populateQueues();
         });

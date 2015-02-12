@@ -96,6 +96,7 @@ function isAlreadyQueued(tweetData){
 			deferred.resolve(true);
 		}
 		else if (doc === null){ //if nothing was found, return false
+			console.log(tweetData, "not queued");
 			deferred.resolve(false);
 		}
 		else { // otherwise return true
@@ -123,9 +124,11 @@ function isAlreadyDisplayed(tweetData){
 					deferred.resolve({toQueue: false, data:tweetData});
 				}
 				else if (doc === null){ //value not found, queue up
+					console.log(tweetData, "not displayed");
 					deferred.resolve({toQueue: true, data:tweetData});
 				}
 				else { //value found, do not queue it up
+					console.log(tweetData, "previously displayed");
 					deferred.resolve({toQueue: false, data:tweetData});
 				}
 			});
