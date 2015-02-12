@@ -1,0 +1,12 @@
+.tweet {
+	margin: 10px;
+}
+
+.textBtn {
+	display: inline;
+	margin: 5px;
+}
+
+.tweetMessage {
+	font-weight: bold;
+}

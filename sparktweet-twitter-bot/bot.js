@@ -20,7 +20,7 @@ displayQueue_db.remove({});
 
 // I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?
  var showBeginningName = false;
- var displayMentionDays = 1;
+ var displayMentionDays = 5;
  var dbCleanupDays = 3;
 
 function queueTweets() {
@@ -90,7 +90,7 @@ function processTweetData(tweetData){
 
 function isAlreadyQueued(tweetData){
 	var deferred = q.defer();
-
+	tweetQueue_db.loadDatabase();
 	tweetQueue_db.findOne({id : tweetData.id}, function (err, doc) {
 		if (err){ //if theres an error, just let it check next time
 			deferred.resolve(true);
@@ -117,6 +117,7 @@ function isAlreadyDisplayed(tweetData){
 			deferred.resolve({toQueue: false, data:tweetData});
 		} 
 		else{
+			displayedTweets_db.loadDatabase();
 			displayedTweets_db.findOne({id : tweetData.id}, function (err, doc) {
 				if (err){ //if theres an error, just let it check next time
 					deferred.resolve({toQueue: false, data:tweetData});
@@ -147,11 +148,11 @@ function isAlreadyDisplayed(tweetData){
  function displayTweet(){
  	console.log("looking to display tweets");
 
+	displayQueue_db.loadDatabase();
  	displayQueue_db.count({}, function (err, count) {
 	  if (count > 0){
 		getLeastRecentTweet().done(function(tweetOfInterest){
 			sendMessage(1,{message: "BEGIN"}).done(function(){
-				console.log("tweetOfInterest", tweetOfInterest);
 				//can only send 61 characters at a time to the spark
 				var messagePromises = [];
 

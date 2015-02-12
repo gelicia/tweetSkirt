@@ -11,13 +11,7 @@ function submitForm(){
       $('#login').css("display", "none");
       $('#title').text("Moderation");
 
-      getTweetQueue().then(function(tweetQueue, tweetErr){
-        getDisplayQueue().then(function(displayQueue, displayErr){
-          console.log("tweets", tweetQueue);
-          console.log("display", displayQueue);
-        });
-      });
-
+      populateQueues();
     }
     else {
       $('#error').text("Incorrect password"); 
@@ -31,11 +25,52 @@ function login(username, password){
 
   $.ajax({
         url: config.rootURL + "/login?password=" + password
-    }).then(function(data) {
+    }).then(function(data) { //TODO ERRORS
        deferred.resolve(data);
     });
 
   return deferred.promise;
+}
+
+function populateQueues(){
+  getTweetQueue().then(function(tweetQueue, tweetErr){
+    getDisplayQueue().then(function(displayQueue, displayErr){
+      //tweetQueue
+      var tweetContainer = d3.select("#tweetQueue");
+      var tweets = tweetContainer.selectAll(".tweet").data(tweetQueue, function(d){return d._id;});
+
+      var tweet = tweets.enter().append("div").classed("tweet", true);
+      tweets.exit().remove();
+
+      tweet.append("div").classed("tweetMessage", true).text(function(d){return d.message;});
+
+      tweet.append("div").classed("textBtn", true).text("Display").on('click', function(d, i){
+        console.log("displayClick", d, i);
+        moveToDisplay(d).then(function(){
+          populateQueues();
+        });
+      });
+
+      tweet.append("div").classed("textBtn", true).text("Remove").on('click', function(d){
+        removeFromQueue(d).then(function(){
+          populateQueues();
+        });
+      });
+
+      //displayQueue
+      var displayContainer = d3.select("#displayQueue");
+      var displayTweets = displayContainer.selectAll(".displayTweet").data(displayQueue, function(d){return d._id;});
+      var displayTweet = displayTweets.enter().append("div").classed("displayTweet", true);
+      displayTweets.exit().remove();
+
+      displayTweet.append("div").classed("tweetMessage", true).text(function(d){return d.message;});
+      displayTweet.append("div").classed("textBtn", true).text("Remove").on('click', function(d){
+        removeFromQueue(d).then(function(){
+          populateQueues();
+        });
+      });
+    });
+  });
 }
 
 function getTweetQueue(){
@@ -43,7 +78,7 @@ function getTweetQueue(){
 
   $.ajax({
         url: config.rootURL + "/tweetQueue"
-    }).then(function(data) {
+    }).then(function(data) { //TODO ERRORS
        deferred.resolve(data);
     });
 
@@ -55,9 +90,27 @@ function getDisplayQueue(){
 
   $.ajax({
         url: config.rootURL + "/displayQueue"
-    }).then(function(data) {
+    }).then(function(data, err) { //TODO ERRORS
        deferred.resolve(data);
     });
 
   return deferred.promise;
+}
+
+function moveToDisplay(d){
+  var deferred = Q.defer();
+
+  $.ajax({ 
+    url: config.rootURL + "/displayQueue", 
+    type: 'POST', 
+    contentType: 'application/x-www-form-urlencoded', 
+    data: {tweetId: d.id, tweetMessage: d.message, tweetCreated_at: new Date(d.created_at)},
+    success: function(){ deferred.resolve(); } 
+  });
+
+  return deferred.promise;
+}
+
+function removeFromQueue(d){
+  console.log(d);
 }

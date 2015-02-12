@@ -29,8 +29,8 @@ app.get('/tweetQueue', function (req, res) {
 
 //show displayQueue
 app.get('/displayQueue', function (req, res) {
-	var tweetQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
-	tweetQueue_db.find({}, function (err, docs) {
+	var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
+	displayQueue_db.find({}, function (err, docs) {
 		res.send(docs);
 	});
 });
@@ -44,8 +44,19 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 	else {
 		var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
 
+		var tweetID = Number(req.body.tweetId);
+
+		var queueTweet = {
+			"id" : tweetID,
+			created_at: new Date(req.body.tweetCreated_at),
+			message : req.body.tweetMessage
+		};
+		displayQueue_db.insert(queueTweet);
+
+		var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
+		tweetQueue_db.remove({id: tweetID});
+
 		//make sure jwt token matches db before saving displayQueue info
-		console.log(req.body);
 		return res.sendStatus(200);
 	}
 });
@@ -58,6 +69,13 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	}
 	else {
 		var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
+
+		var queueTweet = {
+			"id" : req.body.tweetId,
+			created_at: new Date(req.body.tweetCreated_at),
+			message : req.body.tweetMessage
+		};
+		displayedTweets_db.insert(queueTweet);
 
 		//make sure jwt token matches db before saving into displayedTweets
 		console.log(req.body);
@@ -75,7 +93,6 @@ app.get('/login', function (req, res) {
 });
 
 var server = app.listen(3000, function () {
-
   var host = server.address().address;
   var port = server.address().port;
   console.log('Example app listening at http://%s:%s', host, port);
