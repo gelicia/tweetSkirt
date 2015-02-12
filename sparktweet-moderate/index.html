@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Login To Skirt Moderation</title>
+    <title>TweetSkirt Moderation</title>
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="bower_components/md5/build/md5.min.js"></script>
     <script type="text/javascript" src="bower_components/require/build/require.min.js"></script>
@@ -10,7 +10,7 @@
     <script type="text/javascript" src="js/login.js"></script>
     <link rel="stylesheet" type="text/css" href="css/main.css">
   </head>
-  <body>
+  <body onload="checkCookie()">
     <div id="content">
       <h1 id="title">Login</h1>
       <h5 id="error"></h5>

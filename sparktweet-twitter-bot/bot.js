@@ -88,7 +88,7 @@ function processTweetData(tweetData){
 	return queueTweet;
 }
 
-function isAlreadyQueued(tweetData){
+function isTweetQueued(tweetData){
 	var deferred = q.defer();
 	tweetQueue_db.loadDatabase();
 	tweetQueue_db.findOne({id : tweetData.id}, function (err, doc) {
@@ -96,7 +96,6 @@ function isAlreadyQueued(tweetData){
 			deferred.resolve(true);
 		}
 		else if (doc === null){ //if nothing was found, return false
-			console.log(tweetData, "not queued");
 			deferred.resolve(false);
 		}
 		else { // otherwise return true
@@ -107,29 +106,56 @@ function isAlreadyQueued(tweetData){
 	return deferred.promise;
 }
 
+function isDisplayQueued(tweetData){
+	var deferred = q.defer();
+	displayQueue_db.loadDatabase();
+	displayQueue_db.findOne({id : tweetData.id}, function (err, doc) {
+		if (err){ //if theres an error, just let it check next time
+			deferred.resolve(true);
+		}
+		else if (doc === null){ //if nothing was found, return false
+			deferred.resolve(false);
+		}
+		else { // otherwise return true
+			deferred.resolve(true);
+		}
+	});
+	
+	return deferred.promise;
+
+}
+
 function isAlreadyDisplayed(tweetData){
 	var deferred = q.defer();
 
 	//first make sure its not already in the tweetQueue
 	//TODO check the postModeration queue as well
-	var isQueuedPromise = isAlreadyQueued(tweetData);
-	isQueuedPromise.done(function(isAlreadyQueuedResult){
-		if (isAlreadyQueuedResult){
+	var isTweetQueuedPromise = isTweetQueued(tweetData);
+	isTweetQueuedPromise.done(function(isTweetQueuedRes){
+		if(isTweetQueuedRes){
 			deferred.resolve({toQueue: false, data:tweetData});
-		} 
+		}
 		else{
-			displayedTweets_db.loadDatabase();
-			displayedTweets_db.findOne({id : tweetData.id}, function (err, doc) {
-				if (err){ //if theres an error, just let it check next time
+			var isDisplayQueuedPromise = isDisplayQueued(tweetData);
+			isDisplayQueuedPromise.done(function(isDisplayQueuedRes){
+				if(isDisplayQueuedRes){
 					deferred.resolve({toQueue: false, data:tweetData});
 				}
-				else if (doc === null){ //value not found, queue up
-					console.log(tweetData, "not displayed");
-					deferred.resolve({toQueue: true, data:tweetData});
-				}
-				else { //value found, do not queue it up
-					console.log(tweetData, "previously displayed");
-					deferred.resolve({toQueue: false, data:tweetData});
+				else{
+					displayedTweets_db.loadDatabase();
+					displayedTweets_db.findOne({id : tweetData.id}, function (err, doc) {
+						if (err){ //if theres an error, just let it check next time
+							deferred.resolve({toQueue: false, data:tweetData});
+						}
+						else if (doc === null){ //value not found, queue up
+							//console.log(tweetData.text, "not displayed");
+							deferred.resolve({toQueue: true, data:tweetData});
+						}
+						else { //value found, do not queue it up
+							//console.log(tweetData.text, "previously displayed");
+							deferred.resolve({toQueue: false, data:tweetData});
+						}
+					});
 				}
 			});
 		}

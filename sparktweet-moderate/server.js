@@ -2,6 +2,7 @@ var express = require('express');
 var Datastore = require('nedb');
 var jwt = require('jwt-simple');
 var bodyParser = require('body-parser');
+var Q = require('q');
 
 var loginCreds = require('./loginConfig');
 
@@ -17,6 +18,26 @@ var allowCrossDomain = function(req, res, next) {
 };
 
 app.use(allowCrossDomain);
+
+app.get('/login', function (req, res) {
+	var output = {success: false};
+	if (req.query.password === loginCreds.md5Password){
+		output.success = true;
+		var jwToken = jwt.encode({username: req.query.username}, (new Date()).toString());
+		output.jwt = jwToken;
+
+		var login_db = new  Datastore({filename: './login.db', autoload:true});
+		login_db.remove({}, {multi: true});
+		login_db.insert({token: jwToken});
+	}
+	res.send(output);
+});
+
+app.get('/checkCookie', function (req, res) {
+	authenticate(req.query.token).then(function(auth){
+		res.send(auth);
+	});
+});
 
 //show tweetQueue
 app.get('/tweetQueue', function (req, res) {
@@ -48,22 +69,25 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 		return res.sendStatus(400); 
 	}
 	else {
-		var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
+		authenticate(req.body.auth).then(function(authSuccess){
+			if (authSuccess){
+				var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
 
-		var tweetID = Number(req.body.tweetId);
+				var tweetID = Number(req.body.tweetId);
 
-		var queueTweet = {
-			"id" : tweetID,
-			created_at: new Date(req.body.tweetCreated_at),
-			message : req.body.tweetMessage
-		};
-		displayQueue_db.insert(queueTweet);
+				var queueTweet = {
+					"id" : tweetID,
+					created_at: new Date(req.body.tweetCreated_at),
+					message : req.body.tweetMessage
+				};
+				displayQueue_db.insert(queueTweet);
 
-		var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
-		tweetQueue_db.remove({id: tweetID});
+				var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
+				tweetQueue_db.remove({id: tweetID});
 
-		//make sure jwt token matches db before saving displayQueue info
-		return res.sendStatus(200);
+				return res.sendStatus(200);
+			}
+		});
 	}
 });
 
@@ -73,37 +97,46 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 		return res.sendStatus(400); 
 	}
 	else {
-		var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
+		authenticate(req.body.auth).then(function(authSuccess){
+			if (authSuccess){
+				var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
 
-		var tweetID = Number(req.body.tweetId);
+				var tweetID = Number(req.body.tweetId);
 
-		var queueTweet = {
-			"id" : tweetID,
-			displayed_at: new Date(req.body.displayed_at),
-			displayed : req.body.displayed
-		};
-		displayedTweets_db.insert(queueTweet);
+				var queueTweet = {
+					"id" : tweetID,
+					displayed_at: new Date(req.body.displayed_at),
+					displayed : req.body.displayed
+				};
+				displayedTweets_db.insert(queueTweet);
 
-		var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
-		tweetQueue_db.remove({id: tweetID});
+				var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
+				tweetQueue_db.remove({id: tweetID});
 
-		var displayQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
-		displayQueue_db.remove({id: tweetID});
+				var displayQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
+				displayQueue_db.remove({id: tweetID});
 
-		//make sure jwt token matches db before saving into displayedTweets
-		console.log(req.body);
-		return res.sendStatus(200);
+				return res.sendStatus(200);
+			}
+		});
 	}
 });
 
-app.get('/login', function (req, res) {
-	var output = {success: false};
-	if (req.query.password === loginCreds.md5Password){
-		output.success = true;
-		output.jwt = jwt.encode({username: req.query.username}, loginCreds.md5Password);
-	}
-	res.send(output);
-});
+function authenticate(token){
+	var deferred = Q.defer();
+
+	var login_db = new  Datastore({filename: './login.db', autoload:true});
+	login_db.findOne({}, function (err, doc) {
+		if (token == doc.token){
+			deferred.resolve(true);
+		}
+		else {
+			deferred.resolve(false);
+		}
+	});
+
+	return deferred.promise;
+}
 
 var server = app.listen(3000, function () {
   var host = server.address().address;

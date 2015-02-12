@@ -1,5 +1,20 @@
 var loginCreds = require('./loginConfig');
 var config = require('./config');
+
+function checkCookie(){
+  if (document.cookie !== undefined){
+      $.ajax({
+          url: config.rootURL + "/checkCookie?token=" + document.cookie
+      }).then(function(data) { //TODO ERRORS
+         if (data){
+          $('#error').text("");
+          $('#login').css("display", "none");
+          $('#title').text("Moderation");
+          populateQueues();
+         }
+      });
+  }
+}
  
 function submitForm(){ 
   var username = $('#username').val();
@@ -10,6 +25,8 @@ function submitForm(){
       $('#error').text("");
       $('#login').css("display", "none");
       $('#title').text("Moderation");
+
+      document.cookie = res.jwt;
 
       populateQueues();
     }
@@ -36,6 +53,7 @@ function populateQueues(){
     getDisplayQueue().then(function(displayQueue, displayErr){
       //tweetQueue
       var tweetContainer = d3.select("#tweetQueue");
+
       var tweets = tweetContainer.selectAll(".tweet").data(tweetQueue, function(d){return d._id;});
 
       var tweet = tweets.enter().append("div").classed("tweet", true);
@@ -57,8 +75,8 @@ function populateQueues(){
 
       //displayQueue
       var displayContainer = d3.select("#displayQueue");
-      var displayTweets = displayContainer.selectAll(".displayTweet").data(displayQueue, function(d){return d._id;});
-      var displayTweet = displayTweets.enter().append("div").classed("displayTweet", true);
+      var displayTweets = displayContainer.selectAll(".tweet").data(displayQueue, function(d){return d._id;});
+      var displayTweet = displayTweets.enter().append("div").classed("tweet", true);
       displayTweets.exit().remove();
 
       displayTweet.append("div").classed("tweetMessage", true).text(function(d){return d.message;});
@@ -102,7 +120,7 @@ function moveToDisplay(d){
     url: config.rootURL + "/displayQueue", 
     type: 'POST', 
     contentType: 'application/x-www-form-urlencoded', 
-    data: {tweetId: d.id, tweetMessage: d.message, tweetCreated_at: new Date(d.created_at)},
+    data: {tweetId: d.id, tweetMessage: d.message, tweetCreated_at: new Date(d.created_at), auth:document.cookie},
     success: function(){ deferred.resolve(); } 
   });
 
@@ -116,7 +134,7 @@ function removeFromQueue(d){
     url: config.rootURL + "/displayedTweets", 
     type: 'POST', 
     contentType: 'application/x-www-form-urlencoded', 
-    data: {tweetId: d.id, displayed_at: new Date(), displayed: false},
+    data: {tweetId: d.id, displayed_at: new Date(), displayed: false, auth:document.cookie},
     success: function(){ deferred.resolve(); } 
   });
 
