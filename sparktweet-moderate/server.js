@@ -70,12 +70,20 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	else {
 		var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
 
+		var tweetID = Number(req.body.tweetId);
+
 		var queueTweet = {
-			"id" : req.body.tweetId,
-			created_at: new Date(req.body.tweetCreated_at),
-			message : req.body.tweetMessage
+			"id" : tweetID,
+			displayed_at: new Date(req.body.displayed_at),
+			displayed : req.body.displayed
 		};
 		displayedTweets_db.insert(queueTweet);
+
+		var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
+		tweetQueue_db.remove({id: tweetID});
+
+		var displayQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
+		displayQueue_db.remove({id: tweetID});
 
 		//make sure jwt token matches db before saving into displayedTweets
 		console.log(req.body);

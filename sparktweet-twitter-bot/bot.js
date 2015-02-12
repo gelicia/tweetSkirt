@@ -13,8 +13,8 @@ var displayQueue_db = new Datastore({filename: './displayQueue.db', autoload:tru
 var displayedTweets_db = new Datastore({filename: './displayedTweets.db', autoload:true});
 
 //when this app starts, reset the moderation. If this gets to be too much of a pain, only remove from tweetQueue
-tweetQueue_db.remove({});
-displayQueue_db.remove({});
+tweetQueue_db.remove({}, {multi: true});
+displayQueue_db.remove({}, {multi: true});
 //displayedTweets_db.remove({});
 
 
@@ -138,7 +138,7 @@ function isAlreadyDisplayed(tweetData){
  function getLeastRecentTweet(){
  	var deferred = q.defer();
 
- 	displayQueue_db.findOne({}).sort({ created_at: -1 }).exec(function (err, doc) {
+ 	displayQueue_db.findOne({}).sort({ created_at: 1 }).exec(function (err, doc) {
   		deferred.resolve(doc);
 	});
 
@@ -196,7 +196,7 @@ function sendMessage(adminFlag, messageData){
 			if (adminFlag == 1 && message == "END"){
 				//only put the id in the displayed db if sending to the spark doesn't fail
 				tweetQueue_db.insert({id: messageData.id, created_at: messageData.created_at});
-				displayed_db.put(messageData.id, messageData.created_at);
+				displayed_db.insert({id: messageData.id, displayed_at: new Date(), displayed: true});
 				console.log("display done");
 			}
 		}

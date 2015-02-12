@@ -112,5 +112,15 @@ function moveToDisplay(d){
 }
 
 function removeFromQueue(d){
-  console.log(d);
+    var deferred = Q.defer();
+
+  $.ajax({ 
+    url: config.rootURL + "/displayedTweets", 
+    type: 'POST', 
+    contentType: 'application/x-www-form-urlencoded', 
+    data: {tweetId: d.id, displayed_at: new Date(), displayed: false},
+    success: function(){ deferred.resolve(); } 
+  });
+
+  return deferred.promise;
 }
