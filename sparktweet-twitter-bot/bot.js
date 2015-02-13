@@ -1,23 +1,27 @@
 // Our Twitter library
 var Twit = require('twit');
 var rest = require('restler');
-var levelup = require('level');
+var Datastore = require('nedb');
 var q = require('q');
 
 // We need to include our configuration file
 var T = new Twit(require('./twitterConfig.js'));
 var sparkConfig = require('./sparkConfig.js');
 
-//levelup.destroy('./displayedTweets');
+var tweetQueue_db = new Datastore({filename: './tweetQueue.db', autoload:true});
+var displayQueue_db = new Datastore({filename: './displayQueue.db', autoload:true});
+var displayedTweets_db = new Datastore({filename: './displayedTweets.db', autoload:true});
 
-var displayed_db = levelup('./displayedTweets');
+//when this app starts, reset the moderation. If this gets to be too much of a pain, only remove from tweetQueue
+tweetQueue_db.remove({}, {multi: true});
+displayQueue_db.remove({}, {multi: true});
+//displayedTweets_db.remove({});
 
-var tweetQueue = [];
 
-/* I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?  */
-var showBeginningName = false;
-var displayMentionDays = 1;
-var dbCleanupDays = 3;
+// I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?
+ var showBeginningName = false;
+ var displayMentionDays = 5;
+ var dbCleanupDays = 3;
 
 function queueTweets() {
 	console.log("look for tweets...");
@@ -34,9 +38,9 @@ function queueTweets() {
 				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
-						var queueTweet = processTweetData(result.data);
-						tweetQueue.push(queueTweet);
-						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
+						var queueTweet = processTweetData(result.data);					
+						tweetQueue_db.insert(queueTweet);
+						console.log("queueing ", queueTweet.message);
 					}
 				});
 			}
@@ -55,8 +59,8 @@ function queueTweets() {
 				isDisplayedPromise.done(function(result){
 					if(result.toQueue){//tweet not found! queue it up!
 						var queueTweet = processTweetData(result.data);
-						tweetQueue.push(queueTweet);
-						console.log("queueing ", queueTweet.message, "queue at ", tweetQueue.length);
+						tweetQueue_db.insert(queueTweet);
+						console.log("queueing ", queueTweet.message);
 					}
 				});
 			}
@@ -84,50 +88,74 @@ function processTweetData(tweetData){
 	return queueTweet;
 }
 
-function isAlreadyQueued(tweetData){
+function isTweetQueued(tweetData){
 	var deferred = q.defer();
-
-	if (tweetQueue.length == 0){
-		deferred.resolve(false);
-	}
-	else {
-		var isAlreadyQueued = false;
-		for (var i = 0; i < tweetQueue.length; i++) {
-			if (tweetQueue[i].id == tweetData.id){
-				isAlreadyQueued = true;
-			}
-
-			if (i == (tweetQueue.length - 1)){
-				deferred.resolve(isAlreadyQueued);
-			}
+	tweetQueue_db.loadDatabase();
+	tweetQueue_db.findOne({id : tweetData.id}, function (err, doc) {
+		if (err){ //if theres an error, just let it check next time
+			deferred.resolve(true);
 		}
-	}
+		else if (doc === null){ //if nothing was found, return false
+			deferred.resolve(false);
+		}
+		else { // otherwise return true
+			deferred.resolve(true);
+		}
+	});
 	
 	return deferred.promise;
+}
+
+function isDisplayQueued(tweetData){
+	var deferred = q.defer();
+	displayQueue_db.loadDatabase();
+	displayQueue_db.findOne({id : tweetData.id}, function (err, doc) {
+		if (err){ //if theres an error, just let it check next time
+			deferred.resolve(true);
+		}
+		else if (doc === null){ //if nothing was found, return false
+			deferred.resolve(false);
+		}
+		else { // otherwise return true
+			deferred.resolve(true);
+		}
+	});
+	
+	return deferred.promise;
+
 }
 
 function isAlreadyDisplayed(tweetData){
 	var deferred = q.defer();
 
-	var isQueuedPromise = isAlreadyQueued(tweetData);
-	isQueuedPromise.done(function(isAlreadyQueuedResult){
-		if (isAlreadyQueuedResult){
+	//first make sure its not already in the tweetQueue
+	//TODO check the postModeration queue as well
+	var isTweetQueuedPromise = isTweetQueued(tweetData);
+	isTweetQueuedPromise.done(function(isTweetQueuedRes){
+		if(isTweetQueuedRes){
 			deferred.resolve({toQueue: false, data:tweetData});
-		} 
+		}
 		else{
-			displayed_db.get(tweetData.id, function (err, value) {
-				if (err) {
-					if (err.notFound){ //value not found, queue up
-						deferred.resolve({toQueue: true, data:tweetData});
-					}
-					else {
-						//count it as displayed (will not queue up) if there's an error, it should get queued next time around
-						deferred.resolve({toQueue: false, data:tweetData});
-					}
-					
-				}
-				else { //value found, do not queue it up
+			var isDisplayQueuedPromise = isDisplayQueued(tweetData);
+			isDisplayQueuedPromise.done(function(isDisplayQueuedRes){
+				if(isDisplayQueuedRes){
 					deferred.resolve({toQueue: false, data:tweetData});
+				}
+				else{
+					displayedTweets_db.loadDatabase();
+					displayedTweets_db.findOne({id : tweetData.id}, function (err, doc) {
+						if (err){ //if theres an error, just let it check next time
+							deferred.resolve({toQueue: false, data:tweetData});
+						}
+						else if (doc === null){ //value not found, queue up
+							//console.log(tweetData.text, "not displayed");
+							deferred.resolve({toQueue: true, data:tweetData});
+						}
+						else { //value found, do not queue it up
+							//console.log(tweetData.text, "previously displayed");
+							deferred.resolve({toQueue: false, data:tweetData});
+						}
+					});
 				}
 			});
 		}
@@ -136,41 +164,50 @@ function isAlreadyDisplayed(tweetData){
 	return deferred.promise;
 }
 
-function displayTweet(){
-	console.log("looking to display tweets, queue length is ", tweetQueue.length);
+ function getLeastRecentTweet(){
+ 	var deferred = q.defer();
 
-	tweetQueue.sort(function(a, b) {
-		return a.created_at < b.created_at;
+ 	displayQueue_db.findOne({}).sort({ created_at: 1 }).exec(function (err, doc) {
+  		deferred.resolve(doc);
 	});
 
-	if (tweetQueue.length > 0){
-		var tweet = tweetQueue.pop();
-		sendMessage(1,{message: "BEGIN"}).done(function(){
-			//can only send 61 characters at a time to the spark
-			var messagePromises = [];
+ 	return deferred.promise;
+ }
 
-			var msgsNeeded = Math.ceil(tweet.message.length/61);
-			for (var i = 0; i < msgsNeeded; i++) {
-				var tweetData = {};
-				var thisMessageText = "";
-				if (i == (msgsNeeded - 1)){
-					thisMessageText = tweet.message.substring(61*i);
+ function displayTweet(){
+ 	console.log("looking to display tweets");
+
+	displayQueue_db.loadDatabase();
+ 	displayQueue_db.count({}, function (err, count) {
+	  if (count > 0){
+		getLeastRecentTweet().done(function(tweetOfInterest){
+			sendMessage(1,{message: "BEGIN"}).done(function(){
+				//can only send 61 characters at a time to the spark
+				var messagePromises = [];
+
+				var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
+				for (var i = 0; i < msgsNeeded; i++) {
+					var tweetData = {};
+					var thisMessageText = "";
+					if (i == (msgsNeeded - 1)){
+						thisMessageText = tweetOfInterest.message.substring(61*i);
+					}
+					else {
+						thisMessageText = tweetOfInterest.message.substring(61*i, 61 * (i+1));
+					}
+
+					tweetData.message = thisMessageText;
+
+					messagePromises.push(sendMessage(0,tweetData));
 				}
-				else {
-					thisMessageText = tweet.message.substring(61*i, 61 * (i+1));
-				}
 
-				tweetData.message = thisMessageText;
-
-				messagePromises.push(sendMessage(0,tweetData));
-			}
-
-			q.all(messagePromises).done(function(){
-				sendMessage(1,{message:"END", id: tweet.id, created_at: tweet.created_at});
+				q.all(messagePromises).done(function(){
+					sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at});
+				});
 			});
-
 		});
-	}
+	  }
+	});
 }
 
 function sendMessage(adminFlag, messageData){
@@ -187,8 +224,9 @@ function sendMessage(adminFlag, messageData){
 			console.log("msg sent : ", adminFlag, messageData.message);	
 			if (adminFlag == 1 && message == "END"){
 				//only put the id in the displayed db if sending to the spark doesn't fail
-				displayed_db.put(messageData.id, messageData.created_at);
-				console.log("display done, length is ", tweetQueue.length);
+				tweetQueue_db.insert({id: messageData.id, created_at: messageData.created_at});
+				displayed_db.insert({id: messageData.id, displayed_at: new Date(), displayed: true});
+				console.log("display done");
 			}
 		}
 		deferred.resolve();
@@ -197,23 +235,23 @@ function sendMessage(adminFlag, messageData){
 	return deferred.promise;
 }
 
-queueTweets(); 
-//find tweets every three minutes
-setInterval(queueTweets, 2 * 1000 * 60);
+ queueTweets(); 
+// //find tweets every three minutes
+ setInterval(queueTweets, 2 * 1000 * 60);
 
-//display a tweet every minute
-setInterval(displayTweet, 1000 * 30);
+// //display a tweet every minute
+ setInterval(displayTweet, 1000 * 30);
 
-//Make this a process to go off every so often if this program ends up staying online longterm
-function dbCleanup(){
-	var now = new Date();
-	displayed_db.createReadStream()
-	.on('data', function (data) {
-		var tweetDate = new Date(data.value);
-		if (now - tweetDate > 1000*60*60*24*dbCleanupDays){
-			displayed_db.del(data.key);
-		}
-	});
-}
+// //Make this a process to go off every so often if this program ends up staying online longterm
+// function dbCleanup(){
+// 	var now = new Date();
+// 	displayed_db.createReadStream()
+// 	.on('data', function (data) {
+// 		var tweetDate = new Date(data.value);
+// 		if (now - tweetDate > 1000*60*60*24*dbCleanupDays){
+// 			displayed_db.del(data.key);
+// 		}
+// 	});
+// }
 
-dbCleanup();
+// dbCleanup();

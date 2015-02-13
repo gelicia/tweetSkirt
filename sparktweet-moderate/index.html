@@ -1,13 +1,69 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Login To Skirt Moderation</title>
-    <script src="./bower_components/react/react.min.js"></script>
-    <script src="./bower_components/react/JSXTransformer.js"></script>
-    <script src="./bower_components/showdown/compressed//Showdown.min.js"></script>
+    <title>TweetSkirt Moderation</title>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/jquery-cookie/jquery.cookie.js"></script>
+    <script type="text/javascript" src="bower_components/md5/build/md5.min.js"></script>
+    <script type="text/javascript" src="bower_components/require/build/require.min.js"></script>
+    <script type="text/javascript" src="bower_components/q/q.js"></script>
+    <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="js/login.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+
+     <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
   </head>
-  <body>
-    <div id="content"></div>
-    <script type="text/jsx;harmony=true" src="js/login.js"></script>
+  <body onload="checkCookie()">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">TweetSkirt Moderation</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul id="navBarList" class="nav navbar-nav">
+            <!--<li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>-->
+          </ul>
+      </div>
+    </nav>
+    <div class="container">
+      <div class="body-container">
+        <h5 id="error"></h5>
+        <div id="login">
+          <input type="text" id="username" value="gelicia" /> <br/>
+          <input type="password" id="password" onkeydown="if (event.keyCode == 13) document.getElementById('loginBtn').click()"/> <br/>
+          <input type="button" id="loginBtn" value="Login" onclick="submitForm()"/>
+        </div>
+
+        <div id="tweetQueue" class="panel panel-info">
+          <div class="panel-heading">
+            <h3 class="panel-title">Tweet Queue</h3>
+          </div>
+          <div class="panel-body">
+            <ul class="list-group">
+            </ul>
+          </div>
+        </div>
+
+        <div id="displayQueue" class="panel panel-success">
+          <div class="panel-heading">
+            <h3 class="panel-title">Display Queue</h3>
+          </div>
+          <div class="panel-body">
+            <ul class="list-group">
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>    
   </body>
 </html>

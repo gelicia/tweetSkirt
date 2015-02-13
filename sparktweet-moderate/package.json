@@ -15,5 +15,12 @@
   "bugs": {
     "url": "https://github.com/gelicia/tweetSkirt/issues"
   },
-  "homepage": "https://github.com/gelicia/tweetSkirt"
+  "homepage": "https://github.com/gelicia/tweetSkirt",
+  "dependencies": {
+    "body-parser": "^1.11.0",
+    "express": "^4.11.2",
+    "jwt-simple": "^0.2.0",
+    "nedb": "^1.1.1",
+    "q": "^1.1.2"
+  }
 }
