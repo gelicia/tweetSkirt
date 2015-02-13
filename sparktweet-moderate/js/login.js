@@ -2,9 +2,10 @@ var loginCreds = require('./loginConfig');
 var config = require('./config');
 
 function checkCookie(){
-  if (document.cookie !== undefined){
+  var authCookie = $.cookie("tweetSkirtAuth");
+  if (authCookie !== undefined){
       $.ajax({
-          url: config.rootURL + "/checkCookie?token=" + document.cookie
+          url: config.rootURL + "/checkCookie?token=" + authCookie
       }).then(function(data) { //TODO ERRORS
          if (data){
           $('#error').text("");
@@ -32,7 +33,7 @@ function submitForm(){
       $('#navBarList').append("<li class=\"active\"><a onclick=\"logout()\">Logout</a></li>");
 
 
-      document.cookie = res.jwt;
+      $.cookie("tweetSkirtAuth", res.jwt);
 
       populateQueues();
     }
@@ -55,9 +56,10 @@ function login(username, password){
 }
 
 function logout(){
-  if (document.cookie !== undefined){
+  var authCookie = $.cookie("tweetSkirtAuth");
+  if (authCookie !== undefined){
       $.ajax({
-          url: config.rootURL + "/logout?token=" + document.cookie
+          url: config.rootURL + "/logout?token=" + authCookie
       }).then(function(data) { //TODO ERRORS
          if (data){
           $('#error').text("");
@@ -154,7 +156,7 @@ function moveToDisplay(d){
     url: config.rootURL + "/displayQueue", 
     type: 'POST', 
     contentType: 'application/x-www-form-urlencoded', 
-    data: {tweetId: d.id, tweetMessage: d.message, tweetCreated_at: new Date(d.created_at), auth:document.cookie},
+    data: {tweetId: d.id, tweetMessage: d.message, tweetCreated_at: new Date(d.created_at), auth:$.cookie("tweetSkirtAuth")},
     success: function(){ deferred.resolve(); } 
   });
 
@@ -168,7 +170,7 @@ function removeFromQueue(d){
     url: config.rootURL + "/displayedTweets", 
     type: 'POST', 
     contentType: 'application/x-www-form-urlencoded', 
-    data: {tweetId: d.id, displayed_at: new Date(), displayed: false, auth:document.cookie},
+    data: {tweetId: d.id, displayed_at: new Date(), displayed: false, auth:$.cookie("tweetSkirtAuth")},
     success: function(){ deferred.resolve(); } 
   });
 
