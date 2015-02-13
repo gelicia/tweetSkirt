@@ -1,3 +1,19 @@
+body {
+  padding-top: 50px;
+}
+.body-container {
+  padding: 40px 15px;
+  text-align: center;
+}
+
+#tweetQueue{
+	display:none;
+}
+
+#displayQueue{
+	display:none;
+}
+
 .tweet {
 	margin: 10px;
 }

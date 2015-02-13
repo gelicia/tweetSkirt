@@ -33,6 +33,16 @@ app.get('/login', function (req, res) {
 	res.send(output);
 });
 
+app.get('/logout', function (req, res) {
+	authenticate(req.query.token).then(function(auth){
+		if (auth){
+			var login_db = new  Datastore({filename: './login.db', autoload:true});
+			login_db.remove({}, {multi: true});
+		}
+	});
+	res.sendStatus(200);
+});
+
 app.get('/checkCookie', function (req, res) {
 	authenticate(req.query.token).then(function(auth){
 		res.send(auth);
@@ -127,7 +137,7 @@ function authenticate(token){
 
 	var login_db = new  Datastore({filename: './login.db', autoload:true});
 	login_db.findOne({}, function (err, doc) {
-		if (token == doc.token){
+		if (doc !== null && token == doc.token){
 			deferred.resolve(true);
 		}
 		else {
