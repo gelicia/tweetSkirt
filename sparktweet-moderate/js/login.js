@@ -12,6 +12,7 @@ function checkCookie(){
           $('#login').css("display", "none");
           $('#tweetQueue').css("display", "block");
           $('#displayQueue').css("display", "block");
+          $('#displayedTweets').css("display", "block");
           $('#navBarList').append("<li class=\"active\"><a onclick=\"logout()\">Logout</a></li>");
 
           populateQueues();
@@ -30,6 +31,7 @@ function submitForm(){
       $('#login').css("display", "none");
       $('#tweetQueue').css("display", "block");
       $('#displayQueue').css("display", "block");
+      $('#displayedTweets').css("display", "block");
       $('#navBarList').append("<li class=\"active\"><a onclick=\"logout()\">Logout</a></li>");
 
 
@@ -66,6 +68,7 @@ function logout(){
           $('#login').css("display", "block");
           $('#tweetQueue').css("display", "none");
           $('#displayQueue').css("display", "none");
+          $('#displayedTweets').css("display", "none");
           $('#navBarList > li.active').remove();
           $('.tweet').remove();
          }
@@ -76,51 +79,64 @@ function logout(){
 function populateQueues(){
   getTweetQueue().then(function(tweetQueue, tweetErr){
     getDisplayQueue().then(function(displayQueue, displayErr){
-      //tweetQueue
-      var tweetContainer = d3.select("#tweetQueue > .panel-body > ul.list-group");
-      var tweets = tweetContainer.selectAll(".list-group-item").data(tweetQueue, function(d){return d._id;});
-      var tweet = tweets.enter().append("li").classed("list-group-item", true);
-      tweets.exit().remove();
+      getDisplayedTweets().then(function(displayedTweetsQueue, displayedTweetsErr){
 
-      tweet.append("p").classed("tweetMessage", true).text(function(d){return d.message;});
+        //tweetQueue
+        var tweetContainer = d3.select("#tweetQueue > .panel-body > ul.list-group");
+        var tweets = tweetContainer.selectAll(".list-group-item").data(tweetQueue, function(d){return d._id;});
+        var tweet = tweets.enter().append("li").classed("list-group-item", true);
+        tweets.exit().remove();
 
-      tweet.append("button")
-        .attr("type", "button")
-        .classed("btn", true)
-        .classed("btn-primary", true)
-        .text("Display").on('click', function(d, i){
-          moveToDisplay(d).then(function(){
-            populateQueues();
+        tweet.append("p").classed("tweetMessage", true).text(function(d){return d.message;});
+
+        tweet.append("button")
+          .attr("type", "button")
+          .classed("btn", true)
+          .classed("btn-primary", true)
+          .text("Display").on('click', function(d, i){
+            moveToDisplay(d).then(function(){
+              populateQueues();
+            });
           });
-        });
 
-      tweet.append("button")
-        .attr("type", "button")
-        .classed("btn", true)
-        .classed("btn-default", true)
-        .text("Remove").on('click', function(d, i){
-          removeFromQueue(d).then(function(){
-            populateQueues();
+        tweet.append("button")
+          .attr("type", "button")
+          .classed("btn", true)
+          .classed("btn-default", true)
+          .text("Remove").on('click', function(d, i){
+            removeFromQueue(d).then(function(){
+              populateQueues();
+            });
           });
-        });
 
-      //displayQueue
-      var displayContainer = d3.select("#displayQueue > .panel-body > ul.list-group");
-      var displayTweets = displayContainer.selectAll(".list-group-item").data(displayQueue, function(d){return d._id;});
-      var displayTweet = displayTweets.enter().append("li").classed("list-group-item", true);
-      displayTweets.exit().remove();
+        //displayQueue
+        var displayContainer = d3.select("#displayQueue > .panel-body > ul.list-group");
+        var displayTweets = displayContainer.selectAll(".list-group-item").data(displayQueue, function(d){return d._id;});
+        var displayTweet = displayTweets.enter().append("li").classed("list-group-item", true);
+        displayTweets.exit().remove();
 
-      displayTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message;});
-      
-      displayTweet.append("button")
-        .attr("type", "button")
-        .classed("btn", true)
-        .classed("btn-default", true)
-        .text("Remove").on('click', function(d, i){
-          removeFromQueue(d).then(function(){
-            populateQueues();
+        displayTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message;});
+        
+        displayTweet.append("button")
+          .attr("type", "button")
+          .classed("btn", true)
+          .classed("btn-default", true)
+          .text("Remove").on('click', function(d, i){
+            removeFromQueue(d).then(function(){
+              populateQueues();
+            });
           });
-        });
+
+        //displayedTweets
+        var displayedContainer = d3.select("#displayedTweets > .panel-body > ul.list-group");
+        var displayedTweets = displayedContainer.selectAll(".list-group-item").data(displayedTweetsQueue, function(d){return d._id;});
+        var displayedTweet = displayedTweets.enter().append("li").classed("list-group-item", true);
+        displayedTweets.exit().remove();
+
+        displayedTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + " (" + (d.displayed === "true" ? "Displayed" : "Deleted") + ")";});
+        
+
+      });
     });
   });
 }
@@ -149,6 +165,18 @@ function getDisplayQueue(){
   return deferred.promise;
 }
 
+function getDisplayedTweets(){
+  var deferred = Q.defer();
+
+  $.ajax({
+        url: config.rootURL + "/displayedTweets"
+    }).then(function(data, err) { //TODO ERRORS
+       deferred.resolve(data);
+    });
+
+  return deferred.promise;
+}
+
 function moveToDisplay(d){
   var deferred = Q.defer();
 
@@ -170,7 +198,7 @@ function removeFromQueue(d){
     url: config.rootURL + "/displayedTweets", 
     type: 'POST', 
     contentType: 'application/x-www-form-urlencoded', 
-    data: {tweetId: d.id, displayed_at: new Date(), displayed: false, auth:$.cookie("tweetSkirtAuth")},
+    data: {tweetId: d.id, displayed_at: new Date(), tweetMessage: d.message, displayed: false, auth:$.cookie("tweetSkirtAuth")},
     success: function(){ deferred.resolve(); } 
   });
 

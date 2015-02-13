@@ -225,7 +225,7 @@ function sendMessage(adminFlag, messageData){
 			if (adminFlag == 1 && message == "END"){
 				//only put the id in the displayed db if sending to the spark doesn't fail
 				tweetQueue_db.insert({id: messageData.id, created_at: messageData.created_at});
-				displayed_db.insert({id: messageData.id, displayed_at: new Date(), displayed: true});
+				displayed_db.insert({id: messageData.id, message: messageData.message, displayed_at: new Date(), displayed: true});
 				console.log("display done");
 			}
 		}
