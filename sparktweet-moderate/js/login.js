@@ -133,7 +133,7 @@ function populateQueues(){
         var displayedTweet = displayedTweets.enter().append("li").classed("list-group-item", true);
         displayedTweets.exit().remove();
 
-        displayedTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + " (" + (d.displayed === "true" ? "Displayed" : "Deleted") + ")";});
+        displayedTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + " (" + (d.displayed ? "Displayed" : "Deleted") + " at " + new Date(d.displayed_at) + ")";});
         
 
       });

@@ -49,22 +49,24 @@ function queueTweets() {
 
 	//get usages of the #tweetSkirt hashtag
 	T.get('search/tweets', { q: '#tweetSkirt', result_type: 'recent', count: 50}, function(error, data){
-		for (var i = 0; i < data.statuses.length; i++) {
-			var dataOfInterest = data.statuses[i];
-			
-			//only queue up not retweets
-			if (dataOfInterest.retweeted_status == undefined){
-				var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
+		if (data.statuses !== null){
+			for (var i = 0; i < data.statuses.length; i++) {
+				var dataOfInterest = data.statuses[i];
+				
+				//only queue up not retweets
+				if (dataOfInterest.retweeted_status == undefined){
+					var isDisplayedPromise = isAlreadyDisplayed(dataOfInterest);
 
-				isDisplayedPromise.done(function(result){
-					if(result.toQueue){//tweet not found! queue it up!
-						var queueTweet = processTweetData(result.data);
-						tweetQueue_db.insert(queueTweet);
-						console.log("queueing ", queueTweet.message);
-					}
-				});
-			}
-		};
+					isDisplayedPromise.done(function(result){
+						if(result.toQueue){//tweet not found! queue it up!
+							var queueTweet = processTweetData(result.data);
+							tweetQueue_db.insert(queueTweet);
+							console.log("queueing ", queueTweet.message);
+						}
+					});
+				}
+			};
+		}
 	});
 }
 
@@ -202,7 +204,7 @@ function isAlreadyDisplayed(tweetData){
 				}
 
 				q.all(messagePromises).done(function(){
-					sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at});
+					sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at}, tweetOfInterest.message);
 				});
 			});
 		});
@@ -210,7 +212,7 @@ function isAlreadyDisplayed(tweetData){
 	});
 }
 
-function sendMessage(adminFlag, messageData){
+function sendMessage(adminFlag, messageData, rootMsg){
 	var deferred = q.defer();
 	rest.post('https://api.spark.io/v1/devices/' + sparkConfig.deviceID + '/buildString', {
 		data: { 'access_token': sparkConfig.accessToken,
@@ -222,10 +224,10 @@ function sendMessage(adminFlag, messageData){
 		}
 		else {
 			console.log("msg sent : ", adminFlag, messageData.message);	
-			if (adminFlag == 1 && message == "END"){
+			if (adminFlag == 1 && messageData.message == "END"){
 				//only put the id in the displayed db if sending to the spark doesn't fail
-				tweetQueue_db.insert({id: messageData.id, created_at: messageData.created_at});
-				displayed_db.insert({id: messageData.id, message: messageData.message, displayed_at: new Date(), displayed: true});
+				displayedTweets_db.insert({id: messageData.id, message: rootMsg, displayed_at: new Date(), displayed: true});
+				displayQueue_db.remove({id: messageData.id}, {multi: true});
 				console.log("display done");
 			}
 		}

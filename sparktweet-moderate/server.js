@@ -117,7 +117,7 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 					"id" : tweetID,
 					message: req.body.tweetMessage,
 					displayed_at: new Date(req.body.displayed_at),
-					displayed : req.body.displayed
+					displayed : req.body.displayed === "true"
 				};
 				displayedTweets_db.insert(queueTweet);
 
