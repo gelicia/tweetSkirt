@@ -117,7 +117,13 @@ function populateQueues(){
         var displayTweet = displayTweets.enter().append("li").classed("list-group-item", true);
         displayTweets.exit().remove();
 
-        displayTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + (d.errorCount > 0 ? " (Error Count " + d.errorCount + ")" : "");});
+        displayTweet.append("p").attr("class", function(d){
+          var out = "tweetMessage";
+          if (d.errorCount > 0){
+            out += " errored"
+          }
+          return out;
+        }).text(function(d){return d.message + (d.errorCount > 0 ? " (Error Count " + d.errorCount + ")" : "");});
         
         displayTweet.append("button")
           .attr("type", "button")
@@ -139,6 +145,9 @@ function populateQueues(){
           var out = "tweetMessage";
           if (d.displayed){
             out += " displayed";
+          }
+          if(d.errored){
+            out += " errored";
           }
           return out;
         }).text(function(d){return d.message + " (" + new Date(d.displayed_at) + ")";});

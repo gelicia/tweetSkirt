@@ -192,7 +192,7 @@ function isAlreadyDisplayed(tweetData){
 		getLeastRecentTweet().done(function(tweetOfInterest){
 			if (tweetOfInterest.errorCount && tweetOfInterest.errorCount >= (sparkErrorThreshhold-1)){
 				//too many errors, send to displayed
-				displayedTweets_db.insert({id: tweetOfInterest.id, message: "Error: " +  tweetOfInterest.message, displayed_at: new Date(), displayed: false});
+				displayedTweets_db.insert({id: tweetOfInterest.id, message: "Error: " +  tweetOfInterest.message, displayed_at: new Date(), displayed: false, errored: true});
 				displayQueue_db.remove({id: tweetOfInterest.id}, {multi: true});
 			}
 			else {
