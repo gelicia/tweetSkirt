@@ -13,9 +13,9 @@ var displayQueue_db = new Datastore({filename: './displayQueue.db', autoload:tru
 var displayedTweets_db = new Datastore({filename: './displayedTweets.db', autoload:true});
 
 //when this app starts, reset the moderation. If this gets to be too much of a pain, only remove from tweetQueue
-tweetQueue_db.remove({}, {multi: true});
-displayQueue_db.remove({}, {multi: true});
-displayedTweets_db.remove({},{multi: true});
+//tweetQueue_db.remove({}, {multi: true});
+//displayQueue_db.remove({}, {multi: true});
+//displayedTweets_db.remove({},{multi: true});
 
 
 // I am still on the fence about this setting. Do I leave out the name of who the tweet was a reply to?
