@@ -13,8 +13,8 @@ var displayQueue_db = new Datastore({filename: './displayQueue.db', autoload:tru
 var displayedTweets_db = new Datastore({filename: './displayedTweets.db', autoload:true});
 
 //when this app starts, reset the moderation. If this gets to be too much of a pain, only remove from tweetQueue
-tweetQueue_db.remove({}, {multi: true});
-displayQueue_db.remove({}, {multi: true});
+//tweetQueue_db.remove({}, {multi: true});
+//displayQueue_db.remove({}, {multi: true});
 //displayedTweets_db.remove({});
 
 
@@ -22,6 +22,9 @@ displayQueue_db.remove({}, {multi: true});
  var showBeginningName = false;
  var displayMentionDays = 5;
  var dbCleanupDays = 3;
+
+//how many times it will try to send everything to the spark before giving up
+ var sparkErrorThreshhold = 5;
 
 function queueTweets() {
 	console.log("look for tweets...");
@@ -176,6 +179,10 @@ function isAlreadyDisplayed(tweetData){
  	return deferred.promise;
  }
 
+ function incrementErrorCount(tweet){
+ 	displayQueue_db.update({ id: tweet.id }, { $inc: {errorCount: 1}});
+ }
+
  function displayTweet(){
  	console.log("looking to display tweets");
 
@@ -183,32 +190,52 @@ function isAlreadyDisplayed(tweetData){
  	displayQueue_db.count({}, function (err, count) {
 	  if (count > 0){
 		getLeastRecentTweet().done(function(tweetOfInterest){
-			sendMessage(1,{message: "BEGIN"}).done(function(){
-				//can only send 61 characters at a time to the spark
-				var messagePromises = [];
+			if (tweetOfInterest.errorCount && tweetOfInterest.errorCount >= (sparkErrorThreshhold-1)){
+				//too many errors, send to displayed
+				displayedTweets_db.insert({id: tweetOfInterest.id, message: "Error: " +  tweetOfInterest.message, displayed_at: new Date(), displayed: false});
+				displayQueue_db.remove({id: tweetOfInterest.id}, {multi: true});
+			}
+			else {
+				sendMessage(1,{message: "BEGIN"}).done(function(){
+					var promiseChain = q.fcall(function(){});
 
-				var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
-				for (var i = 0; i < msgsNeeded; i++) {
-					var tweetData = {};
-					var thisMessageText = "";
-					if (i == (msgsNeeded - 1)){
-						thisMessageText = tweetOfInterest.message.substring(61*i);
+					var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
+
+					var addToChain = function (i){
+						var message = {id: tweetOfInterest.id};
+						if (i == (msgsNeeded - 1)){
+							message.message = tweetOfInterest.message.substring(61*i);
+						}
+						else {
+							message.message = tweetOfInterest.message.substring(61*i, 61 * (i+1));
+						}
+
+						var promiseLink = function(){
+							var deferred = q.defer();
+							sendMessage(0, message).done(function(){deferred.resolve();}, function(){deferred.reject();});
+							return deferred.promise;
+						};
+
+						promiseChain = promiseChain.then(promiseLink);
 					}
-					else {
-						thisMessageText = tweetOfInterest.message.substring(61*i, 61 * (i+1));
+
+					for (var i = 0; i < msgsNeeded; i++) {
+						addToChain(i);
 					}
 
-					tweetData.message = thisMessageText;
-
-					messagePromises.push(sendMessage(0,tweetData));
-				}
-
-				q.all(messagePromises).done(function(){
-					sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at}, tweetOfInterest.message);
+					promiseChain.done(function(){
+						sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at}, tweetOfInterest.message)
+							.done(function(){}, function(){incrementErrorCount(tweetOfInterest);});
+					}, function(){
+						incrementErrorCount(tweetOfInterest);
+					});
+				}, function(){ //BEGIN errored out
+					incrementErrorCount(tweetOfInterest);
 				});
-			});
+			}
 		});
 	  }
+
 	});
 }
 
@@ -221,6 +248,7 @@ function sendMessage(adminFlag, messageData, rootMsg){
 		//sometimes the spark API returns the html for the error page instead of the standard array
 		if ((data.ok !== undefined && !(data.ok)) || (typeof data == "string" && data.substring(0, 6) == "<html>")){
 			console.log("Error: " + data.error + " for ", adminFlag, messageData.message, " Tweet will be requeued.");
+			deferred.reject(data.error);
 		}
 		else {
 			console.log("msg sent : ", adminFlag, messageData.message);	
@@ -230,18 +258,19 @@ function sendMessage(adminFlag, messageData, rootMsg){
 				displayQueue_db.remove({id: messageData.id}, {multi: true});
 				console.log("display done");
 			}
+			deferred.resolve();
 		}
-		deferred.resolve();
 	});
 
 	return deferred.promise;
 }
 
  queueTweets(); 
-// //find tweets every three minutes
+ 
+ //find tweets every three minutes
  setInterval(queueTweets, 2 * 1000 * 60);
 
-// //display a tweet every minute
+ //display a tweet every minute
  setInterval(displayTweet, 1000 * 30);
 
 // //Make this a process to go off every so often if this program ends up staying online longterm
