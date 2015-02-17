@@ -989,6 +989,7 @@ int buildString(String arg) {
         }
     }
     else {
+        msg.replace("%26", "&");
         displayPlaceholder.concat(msg);
     }
     

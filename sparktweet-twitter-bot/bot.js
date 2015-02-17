@@ -198,16 +198,28 @@ function isAlreadyDisplayed(tweetData){
 			else {
 				sendMessage(1,{message: "BEGIN"}).done(function(){
 					var promiseChain = q.fcall(function(){});
+					var formatMessage = tweetOfInterest.message;
 
-					var msgsNeeded = Math.ceil(tweetOfInterest.message.length/61);
+					//forward quotes “ to "
+					formatMessage = formatMessage.replace(/“/g, '"');
+					//backward quotes ” to "
+					formatMessage = formatMessage.replace(/”/g, '"');
+					//something implicitly handles the quotations being passed correctly
+
+					formatMessage = formatMessage.replace(/&amp;/g, '%26');
+
+					console.log("pre formatMessage ", tweetOfInterest.message);
+					console.log("post formatMessage ", formatMessage);
+
+					var msgsNeeded = Math.ceil(formatMessage.length/61);
 
 					var addToChain = function (i){
 						var message = {id: tweetOfInterest.id};
 						if (i == (msgsNeeded - 1)){
-							message.message = tweetOfInterest.message.substring(61*i);
+							message.message = formatMessage.substring(61*i);
 						}
 						else {
-							message.message = tweetOfInterest.message.substring(61*i, 61 * (i+1));
+							message.message = formatMessage.substring(61*i, 61 * (i+1));
 						}
 
 						var promiseLink = function(){
@@ -224,7 +236,7 @@ function isAlreadyDisplayed(tweetData){
 					}
 
 					promiseChain.done(function(){
-						sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at}, tweetOfInterest.message)
+						sendMessage(1,{message:"END", id: tweetOfInterest.id, created_at: tweetOfInterest.created_at}, formatMessage)
 							.done(function(){}, function(){incrementErrorCount(tweetOfInterest);});
 					}, function(){
 						incrementErrorCount(tweetOfInterest);
