@@ -124,9 +124,7 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 			if (authSuccess){
 				var loadSuccess = false;
 
-				displayQueue_db.loadDatabase(function (err) {  
-  					console.log(err);
-				});
+				displayQueue_db.loadDatabase();
 
 				var tweetID = Number(req.body.tweetId);
 
@@ -140,9 +138,7 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 
 				tweetQueue_db.loadDatabase(function (err) {
 					if (!err){
-						tweetQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
-							console.log("here", err, numRemoved);
-						});
+						tweetQueue_db.remove({id: tweetID});
 					}
 					else {
 						res.sendStatus(500);
@@ -163,9 +159,7 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	else {
 		authenticate(req.body.auth).then(function(authSuccess){
 			if (authSuccess){
-				displayedTweets_db.loadDatabase(function (err) {  
-  					console.log(err);
-				});
+				displayedTweets_db.loadDatabase();
 
 				var tweetID = Number(req.body.tweetId);
 
@@ -180,9 +174,7 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 				
 				tweetQueue_db.loadDatabase(function (err) {
 					if (!err){
-						tweetQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
-							console.log("here2", err, numRemoved);
-						});
+						tweetQueue_db.remove({id: tweetID}, {});
 					}
 					else {
 						res.sendStatus(500);
@@ -191,9 +183,7 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 
 				displayQueue_db.loadDatabase(function (err) {
 					if (!err){
-						displayQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
-							console.log("here3", err, numRemoved);
-						});
+						displayQueue_db.remove({id: tweetID});
 					}
 					else {
 						res.sendStatus(500);
