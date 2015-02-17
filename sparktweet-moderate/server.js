@@ -1,3 +1,5 @@
+var https = require('https');
+var fs = require('fs');
 var express = require('express');
 var Datastore = require('nedb');
 var jwt = require('jwt-simple');
@@ -149,6 +151,14 @@ function authenticate(token){
 
 	return deferred.promise;
 }
+
+/*var privateKey = fs.readFileSync( 'privatekey.pem' );
+var certificate = fs.readFileSync( 'certificate.pem' );
+
+https.createServer({
+    key: privateKey,
+    cert: certificate
+}, app).listen(3000);*/
 
 var server = app.listen(3000, function () {
   var host = server.address().address;
