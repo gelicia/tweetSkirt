@@ -959,7 +959,7 @@ byte all[] = {
 int lengths[] = {2,2,5,6,6,6,6,3,5,5,5,6,2,6,2,6,6,6,6,6,6,6,6,6,6,6,2,2,5,6,5,6,7,6,6,6,6,6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,4,6,4,6,6,3,6,6,6,6,6,5,6,6,2,6,5,3,6,6,6,6,6,6,6,4,6,6,6,6,6,6,5,2,5,6};
 
 // Number of RGB LEDs in strand:
-int LEDsW = 10;
+int LEDsW = 31; 
 int LEDsH = 8;
 
 //pixel pin is D2
@@ -976,6 +976,17 @@ void setup() {
   strip.show();
 }
 
+String sanitizeString(String input){
+    String output = input;
+    for (int i= 0; i < input.length(); i++){
+        char thisChar = input.charAt(i);
+        if (thisChar < 32 || thisChar > 126){
+            output.setCharAt(i, ' ');
+        }
+    }
+    return output;
+}
+
 int buildString(String arg) {
     int adminMsg = arg.substring(0, 1).toInt();
     String msg = arg.substring(2);
@@ -989,8 +1000,10 @@ int buildString(String arg) {
         }
     }
     else {
+        //ampersands are handled weird by the API, so it is the ONE exception of getting handled here
         msg.replace("%26", "&");
-        displayPlaceholder.concat(msg);
+        String msgSant = sanitizeString(msg);
+        displayPlaceholder.concat(msgSant);
     }
     
     Serial.print(adminMsg);

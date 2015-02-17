@@ -24,7 +24,7 @@ var displayedTweets_db = new Datastore({filename: './displayedTweets.db', autolo
  var dbCleanupDays = 3;
 
 //how many times it will try to send everything to the spark before giving up
- var sparkErrorThreshhold = 5;
+ var sparkErrorThreshhold = 3;
 
 function queueTweets() {
 	console.log("look for tweets...");
@@ -200,10 +200,11 @@ function isAlreadyDisplayed(tweetData){
 					var promiseChain = q.fcall(function(){});
 					var formatMessage = tweetOfInterest.message;
 
-					//forward quotes “ to "
 					formatMessage = formatMessage.replace(/“/g, '"');
-					//backward quotes ” to "
 					formatMessage = formatMessage.replace(/”/g, '"');
+					formatMessage = formatMessage.replace(/‘/g, '\'');
+					formatMessage = formatMessage.replace(/’/g, '\'');
+
 					//something implicitly handles the quotations being passed correctly
 
 					formatMessage = formatMessage.replace(/&amp;/g, '%26');
