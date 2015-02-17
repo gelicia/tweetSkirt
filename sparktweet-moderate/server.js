@@ -12,6 +12,12 @@ var app = express();
 
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
+var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db'});
+var displayQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db'});
+var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db'});
+var login_db = new  Datastore({filename: './login.db'});
+
+
 var allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
@@ -28,21 +34,36 @@ app.get('/login', function (req, res) {
 		var jwToken = jwt.encode({username: req.query.username}, (new Date()).toString());
 		output.jwt = jwToken;
 
-		var login_db = new  Datastore({filename: './login.db', autoload:true});
-		login_db.remove({}, {multi: true});
-		login_db.insert({token: jwToken});
+		login_db.loadDatabase(function (err) {
+			if (!err){
+				login_db.remove({}, {multi: true});
+				login_db.insert({token: jwToken});
+				res.send(output);
+			}
+			else {
+				res.sendStatus(500);
+			}
+		});
 	}
-	res.send(output);
 });
 
 app.get('/logout', function (req, res) {
 	authenticate(req.query.token).then(function(auth){
 		if (auth){
-			var login_db = new  Datastore({filename: './login.db', autoload:true});
-			login_db.remove({}, {multi: true});
+			login_db.loadDatabase(function (err) {
+				if (!err){
+					login_db.remove({}, {multi: true});
+					res.sendStatus(200);
+				}
+				else {
+					res.sendStatus(500);
+				}
+			});
+		}
+		else {
+			res.sendStatus(200);
 		}
 	});
-	res.sendStatus(200);
 });
 
 app.get('/checkCookie', function (req, res) {
@@ -53,25 +74,43 @@ app.get('/checkCookie', function (req, res) {
 
 //show tweetQueue
 app.get('/tweetQueue', function (req, res) {
-	var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
-	tweetQueue_db.find({}, function (err, docs) {
-		res.send(docs);
+	tweetQueue_db.loadDatabase(function (err) {
+		if (!err){
+			tweetQueue_db.find({}, function (err, docs) {
+				res.send(docs);
+			});
+		}
+		else {
+			res.sendStatus(500);
+		}
 	});
 });
 
 //show displayQueue
 app.get('/displayQueue', function (req, res) {
-	var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
-	displayQueue_db.find({}, function (err, docs) {
-		res.send(docs);
+	displayQueue_db.loadDatabase(function (err) {
+		if (!err){
+			displayQueue_db.find({}, function (err, docs) {
+				res.send(docs);
+			});
+		}
+		else {
+			res.sendStatus(500);
+		}
 	});
 });
 
 //show displayedTweets
 app.get('/displayedTweets', function (req, res) {
-	var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
-	displayedTweets_db.find({}, function (err, docs) {
-		res.send(docs);
+	displayedTweets_db.loadDatabase(function (err) {
+		if (!err){
+			displayedTweets_db.find({}, function (err, docs) {
+				res.send(docs);
+			});
+		}
+		else {
+			res.sendStatus(500);
+		}
 	});
 });
 
@@ -83,7 +122,11 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 	else {
 		authenticate(req.body.auth).then(function(authSuccess){
 			if (authSuccess){
-				var displayQueue_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
+				var loadSuccess = false;
+
+				displayQueue_db.loadDatabase(function (err) {  
+  					console.log(err);
+				});
 
 				var tweetID = Number(req.body.tweetId);
 
@@ -95,8 +138,16 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 				};
 				displayQueue_db.insert(queueTweet);
 
-				var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
-				tweetQueue_db.remove({id: tweetID});
+				tweetQueue_db.loadDatabase(function (err) {
+					if (!err){
+						tweetQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
+							console.log("here", err, numRemoved);
+						});
+					}
+					else {
+						res.sendStatus(500);
+					}
+				});
 
 				return res.sendStatus(200);
 			}
@@ -112,7 +163,9 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 	else {
 		authenticate(req.body.auth).then(function(authSuccess){
 			if (authSuccess){
-				var displayedTweets_db = new  Datastore({filename: '../sparktweet-twitter-bot/displayedTweets.db', autoload:true});
+				displayedTweets_db.loadDatabase(function (err) {  
+  					console.log(err);
+				});
 
 				var tweetID = Number(req.body.tweetId);
 
@@ -124,13 +177,30 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 				};
 				displayedTweets_db.insert(queueTweet);
 
-				var tweetQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/tweetQueue.db', autoload:true});
-				tweetQueue_db.remove({id: tweetID});
+				
+				tweetQueue_db.loadDatabase(function (err) {
+					if (!err){
+						tweetQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
+							console.log("here2", err, numRemoved);
+						});
+					}
+					else {
+						res.sendStatus(500);
+					}
+				});
 
-				var displayQueue_db = new Datastore({filename: '../sparktweet-twitter-bot/displayQueue.db', autoload:true});
-				displayQueue_db.remove({id: tweetID});
+				displayQueue_db.loadDatabase(function (err) {
+					if (!err){
+						displayQueue_db.remove({id: tweetID}, {}, function(err, numRemoved){
+							console.log("here3", err, numRemoved);
+						});
+					}
+					else {
+						res.sendStatus(500);
+					}
+				});
 
-				return res.sendStatus(200);
+				res.sendStatus(200);
 			}
 		});
 	}
@@ -139,13 +209,19 @@ app.post('/displayedTweets', urlencodedParser, function (req, res) {
 function authenticate(token){
 	var deferred = Q.defer();
 
-	var login_db = new  Datastore({filename: './login.db', autoload:true});
-	login_db.findOne({}, function (err, doc) {
-		if (doc !== null && token == doc.token){
-			deferred.resolve(true);
+	login_db.loadDatabase(function (err) {
+		if (!err){
+			login_db.findOne({}, function (err, doc) {
+				if (doc !== null && token == doc.token){
+					deferred.resolve(true);
+				}
+				else {
+					deferred.resolve(false);
+				}
+			});
 		}
 		else {
-			deferred.resolve(false);
+			deferred.reject();
 		}
 	});
 

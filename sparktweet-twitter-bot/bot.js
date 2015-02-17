@@ -205,12 +205,7 @@ function isAlreadyDisplayed(tweetData){
 					formatMessage = formatMessage.replace(/‘/g, '\'');
 					formatMessage = formatMessage.replace(/’/g, '\'');
 
-					//something implicitly handles the quotations being passed correctly
-
 					formatMessage = formatMessage.replace(/&amp;/g, '%26');
-
-					console.log("pre formatMessage ", tweetOfInterest.message);
-					console.log("post formatMessage ", formatMessage);
 
 					var msgsNeeded = Math.ceil(formatMessage.length/61);
 
