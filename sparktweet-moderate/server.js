@@ -88,7 +88,8 @@ app.post('/displayQueue', urlencodedParser, function (req, res) {
 				var queueTweet = {
 					"id" : tweetID,
 					created_at: new Date(req.body.tweetCreated_at),
-					message : req.body.tweetMessage
+					message : req.body.tweetMessage,
+					errorCount: 0
 				};
 				displayQueue_db.insert(queueTweet);
 

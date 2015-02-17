@@ -22,6 +22,10 @@ body {
 	font-weight: bold;
 }
 
+.tweetMessage.displayed {
+	color: green;
+}
+
 .btn-primary{
 	margin-right: 10px;
 }

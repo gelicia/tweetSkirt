@@ -5,8 +5,9 @@ function checkCookie(){
   var authCookie = $.cookie("tweetSkirtAuth");
   if (authCookie !== undefined){
       $.ajax({
-          url: config.rootURL + "/checkCookie?token=" + authCookie
-      }).then(function(data) { //TODO ERRORS
+          url: config.rootURL + "/checkCookie?token=" + authCookie,
+          error: function(){$('#error').text("Error connecting to server");}
+      }).then(function(data) { 
          if (data){
           $('#error').text("");
           $('#login').css("display", "none");
@@ -49,8 +50,9 @@ function login(username, password){
   var deferred = Q.defer();
 
   $.ajax({
-        url: config.rootURL + "/login?password=" + password
-    }).then(function(data) { //TODO ERRORS
+        url: config.rootURL + "/login?password=" + password,
+        error: function(){$('#error').text("Error connecting to server");}
+    }).then(function(data, err) {    
        deferred.resolve(data);
     });
 
@@ -115,7 +117,7 @@ function populateQueues(){
         var displayTweet = displayTweets.enter().append("li").classed("list-group-item", true);
         displayTweets.exit().remove();
 
-        displayTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message;});
+        displayTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + (d.errorCount > 0 ? " (Error Count " + d.errorCount + ")" : "");});
         
         displayTweet.append("button")
           .attr("type", "button")
@@ -132,8 +134,14 @@ function populateQueues(){
         var displayedTweets = displayedContainer.selectAll(".list-group-item").data(displayedTweetsQueue, function(d){return d._id;});
         var displayedTweet = displayedTweets.enter().append("li").classed("list-group-item", true);
         displayedTweets.exit().remove();
-
-        displayedTweet.append("p").classed("tweetMessage", true).text(function(d){return d.message + " (" + (d.displayed ? "Displayed" : "Deleted") + " at " + new Date(d.displayed_at) + ")";});
+        //classed("tweetMessage", true).classed("displayed", d.displayed)
+        displayedTweet.append("p").attr("class", function(d){
+          var out = "tweetMessage";
+          if (d.displayed){
+            out += " displayed";
+          }
+          return out;
+        }).text(function(d){return d.message + " (" + new Date(d.displayed_at) + ")";});
         
 
       });
