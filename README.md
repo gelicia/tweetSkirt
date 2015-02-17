@@ -25,6 +25,8 @@ curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=access
 curl https://api.spark.io/v1/devices/deviceID/buildString -d access_token=accessToken -d "args=1,END"
 ```
 
+Characters outside of the ASCII range will be converted to spaces. Ampersands are a special case because the Spark API doesn't like them - it looks for %26 and converts that into an ampersand. Your bot should convert ampersands into %26.
+
 ### /sparktweet-twitter-bot/
 This directory contains the node program that will look to twitter for tweets and queue them to display, then display them off the queue.
 
@@ -36,7 +38,20 @@ The program gets messages from two sources - mentions to @tweetSkirt and recent 
 
 For mentions, it grabs the last 50, and finds any that are less than 24 hours old that have not been displayed before. For #tweetSkirt usage, it grabs the last 50 "recent" (recent is up to the twitter search API) and finds any that have not been displayed before.
 
-Any tweets that have been displayed have their IDs stored in a small database. Tweets don't have their ID stored until after the display was successful. 
+Any tweets that have been displayed have their data stored in a small database. Tweets don't have their ID stored until after the display was successful. 
+
+Special handling of single and double quotes are handled here. Additionally, ampersands are converted to %26 to keep the Spark API happy.
+
+Error handling is handled in this app - There is a variable called `sparkErrorThreshhold` that will record how many times it will handle a failure to send before giving up and moving it to the displayed tweets (with a message that it errored). If you find this is happening to one tweet consistantly, there is probably some special character I didn't think of that is escaping all the rest of the special character checks.
+
+### /sparktweet-moderate/
+This directory contains both the API (server.js) and the site to interact with the API to move tweets from the incoming queue (where the bot puts them) to the display queue. Run `bower install` for the app and `npm install` for the API. 
+
+The configTEMP.js should be whereever the API is hosted (in case you end up breaking this up into two servers). Remove the TEMP on save.
+
+The loginConfigTEMP.js should have a salt and whatever your chosen password plus the salt ends up being after being md5 hashed. Remove the TEMP on save. 
+
+Be sure to host this site under SSL. I haven't gotten that setup yet but I will when I go to host this remotely.
 
 ### Other
 
