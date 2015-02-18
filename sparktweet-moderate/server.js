@@ -76,8 +76,8 @@ app.get('/checkCookie', function (req, res) {
 app.get('/tweetQueue', function (req, res) {
 	tweetQueue_db.loadDatabase(function (err) {
 		if (!err){
-			tweetQueue_db.find({}, function (err, docs) {
-				res.send(docs);
+			tweetQueue_db.find({}).sort({ created_at: 1 }).exec(function (err, docs) {
+		  		res.send(docs);
 			});
 		}
 		else {
@@ -90,8 +90,8 @@ app.get('/tweetQueue', function (req, res) {
 app.get('/displayQueue', function (req, res) {
 	displayQueue_db.loadDatabase(function (err) {
 		if (!err){
-			displayQueue_db.find({}, function (err, docs) {
-				res.send(docs);
+			displayQueue_db.find({}).sort({ created_at: 1 }).exec(function (err, docs) {
+		  		res.send(docs);
 			});
 		}
 		else {
@@ -104,8 +104,8 @@ app.get('/displayQueue', function (req, res) {
 app.get('/displayedTweets', function (req, res) {
 	displayedTweets_db.loadDatabase(function (err) {
 		if (!err){
-			displayedTweets_db.find({}, function (err, docs) {
-				res.send(docs);
+			displayedTweets_db.find({}).sort({ created_at: 1 }).exec(function (err, docs) {
+		  		res.send(docs);
 			});
 		}
 		else {
