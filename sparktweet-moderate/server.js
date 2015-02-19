@@ -5,6 +5,7 @@ var Datastore = require('nedb');
 var jwt = require('jwt-simple');
 var bodyParser = require('body-parser');
 var Q = require('q');
+var serveStatic = require('serve-static');
 
 var loginCreds = require('./loginConfig');
 
@@ -225,6 +226,8 @@ https.createServer({
     key: privateKey,
     cert: certificate
 }, app).listen(3000);*/
+
+app.use(serveStatic('public', {'index': ['index.html', 'index.htm']}));
 
 var server = app.listen(3000, function () {
   var host = server.address().address;
