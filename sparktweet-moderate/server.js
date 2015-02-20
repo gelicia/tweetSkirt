@@ -6,6 +6,8 @@ var jwt = require('jwt-simple');
 var bodyParser = require('body-parser');
 var Q = require('q');
 var serveStatic = require('serve-static');
+var https = require('https');
+var fs = require('fs');
 
 var loginCreds = require('./loginConfig');
 
@@ -45,6 +47,9 @@ app.get('/login', function (req, res) {
 				res.sendStatus(500);
 			}
 		});
+	}
+	else {
+		res.send(output);
 	}
 });
 
@@ -219,18 +224,27 @@ function authenticate(token){
 	return deferred.promise;
 }
 
-/*var privateKey = fs.readFileSync( 'privatekey.pem' );
-var certificate = fs.readFileSync( 'certificate.pem' );
+app.use(serveStatic('public', {'index': ['index.html', 'index.htm']}));
+
+
+//SSL server
+var privateKey = fs.readFileSync( '../.ssl/ssl.key' );
+var certificate = fs.readFileSync( '../.ssl/ssl.crt' );
 
 https.createServer({
     key: privateKey,
     cert: certificate
-}, app).listen(3000);*/
+}, app).listen(443,
+	function () {
+	  console.log('TweetSkirt Site Running');
+	});
 
-app.use(serveStatic('public', {'index': ['index.html', 'index.htm']}));
+
+
+/* Non SSL server
 
 var server = app.listen(3000, function () {
   var host = server.address().address;
   var port = server.address().port;
   console.log('TweetSkirt Moderation API listening at http://%s:%s', host, port);
-});
+});*/
