@@ -120,7 +120,7 @@ function populateQueues(){
         displayTweet.append("p").attr("class", function(d){
           var out = "tweetMessage";
           if (d.errorCount > 0){
-            out += " errored"
+            out += " errored";
           }
           return out;
         }).text(function(d){return d.message + (d.errorCount > 0 ? " (Error Count " + d.errorCount + ")" : "");});
