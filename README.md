@@ -49,7 +49,7 @@ This directory contains both the API (server.js) and the site to interact with t
 
 The configTEMP.js should be whereever the API is hosted (in case you end up breaking this up into two servers). Remove the TEMP on save.
 
-The loginConfigTEMP.js should have a salt and whatever your chosen password plus the salt ends up being after being md5 hashed. Remove the TEMP on save. 
+The loginConfigTEMP.js is in two places and both files need different things. The loginConfig in the public directory just needs the salt. The loginConfig outside of it should have whatever your chosen password plus the salt ends up being after being md5 hashed. Remove the TEMP on save on both.
 
 Be sure to host this site under SSL. I haven't gotten that setup yet but I will when I go to host this remotely.
 

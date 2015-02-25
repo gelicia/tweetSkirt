@@ -1,4 +1,4 @@
-var loginCreds = require('../loginConfig');
+var loginCreds = require('./loginConfig');
 var config = require('./config');
 
 function checkCookie(){
